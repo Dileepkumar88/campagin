@@ -1,0 +1,27 @@
+with tf as (
+select count(*),date(_epoch),cp_type,cp_id from gmg_fba18d75._trigger_fire where cp_type = 'c' and tp = 'et' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 2,3,4
+
+),es as (
+select count(*),date(_epoch),cp_type,cp_id from gmg_fba18d75._email_sent where cp_type = 'c' and tp = 'et' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 2,3,4
+
+), eo as (
+select count(*),date(_epoch),cp_type,cp_id from gmg_fba18d75._email_open where cp_type = 'c' and tp = 'et' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 2,3,4
+
+),ec as (
+select count(*),date(_epoch),cp_type,cp_id from gmg_fba18d75
+  ._email_click where cp_type = 'c' and tp = 'et' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 2,3,4
+
+)
+
+
+select tf.date,tf.cp_type,tf.cp_id,tf.count as triggers ,es.count as email_sent,eo.count as email_open,ec.count as email_click
+
+from tf left join es on es.date = tf.date and es.cp_type = tf.cp_type and es.cp_id = tf.cp_id
+        left join eo on eo.date = es.date and eo.cp_type = tf.cp_type and eo.cp_id = tf.cp_id
+        left join ec on ec.date = eo.date and ec.cp_type = tf.cp_type and ec.cp_id = tf.cp_id
+
+order by 1
