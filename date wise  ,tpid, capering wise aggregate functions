@@ -1,0 +1,25 @@
+
+
+with tf as (
+select count(*),date(_epoch),tpid,cp_id from gmg_fba18d75._trigger_fire where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 2,3,4
+
+), ps as (
+select count(*),date(_epoch),tpid,cp_id from gmg_fba18d75._push_sent where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 2,3,4
+
+), pr as (
+select count(*),date(_epoch),tpid,cp_id from gmg_fba18d75._push_recved where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 2,3,4
+
+), po as (
+select count(*),date(_epoch),tpid,cp_id from gmg_fba18d75._push_open where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 2,3,4
+
+)
+
+select tf.date,tf.tpid,tf.cp_id,tf.count as triggers, ps.count as push_sent,pr.count as push_recved,po.count as push_open
+from tf left join ps on ps.date = tf.date and  ps.cp_id= tf.cp_id and ps.tpid = tf.tpid
+        left join pr on pr.date = ps.date and  pr.cp_id= ps.cp_id and pr.tpid = ps.tpid
+        left join po on po.date = pr.date and  po.cp_id= pr.cp_id and po.tpid = pr.tpid
+order by 1
