@@ -1,0 +1,24 @@
+with tf as (
+select _visid,cp_id,tpid,(_epoch at time zone 'UTC+5:30')as time from gmg_fba18d75._trigger_fire where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 1,2,3,4
+
+
+), ps as (
+select _visid,cp_id,tpid,(_epoch at time zone 'UTC+5:30') as time from gmg_fba18d75._push_sent where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 1,2,3,4
+
+), pr as (
+select _visid,cp_id,tpid,(_epoch at time zone 'UTC+5:30') as time from gmg_fba18d75._push_recved where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 1,2,3,4
+
+), po as (
+select _visid,cp_id,tpid,(_epoch at time zone 'UTC+5:30') as time from gmg_fba18d75._push_open where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date
+group by 1,2,3,4
+
+)
+
+select tf._visid,tf.cp_id,tf.time as trigger_time,ps.time,pr.time,po.time as push_open
+from tf left join ps on ps._visid=tf._visid and ps.cp_id=tf.cp_id and ps.tpid=tf.tpid
+        left join pr on ps._visid=pr._visid and ps.cp_id=pr.cp_id and ps.tpid=pr.tpid
+        left join po on po._visid=pr._visid and po.cp_id=pr.cp_id and po.tpid=pr.tpid
+limit 10
