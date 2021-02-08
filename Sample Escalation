@@ -1,0 +1,88 @@
+select * from gmg_fba18d75.visitor_properties limit 25;		
+Output:
+_visid	_epoch	property_name	property_s	property_n	property_as					
+QfqP3ZQmeNfIDJoz	2020-02-25 6:43:25	_uniqid	698910	null	null					
+										
+select _visid,property_s from gmg_fba18d75.visitor_properties where property_name = '_uniqid' limit 10;	
+Output:
+_visid	property_s									
+sPdsMZYnqxht-7hy	612208									
+tb54r6nGmAThCn4G	36375									
+ljanJS2KZUEDMsJ1	603997									
+l24SriqHneTbU29j	606454									
+p4ilxW-Q4oLboI3N	606617									
+606617										
+										
+select count,count(*) from (select property_s,count(*) from gmg_fba18d75.visitor_properties										
+where property_name = '_uniqid' group by 1) a group by 1;			
+Output:
+count	count									
+92	92									
+8	8									
+27397	27397									
+19	19									
+4917	4917									
+44	44									
+163869	163869									
+1	1									
+										
+										
+select * from ( select _visid from gmg_fba18d75._http_req_sent where (_epoch at time zone 'UTC+5:30') between '2020-12-01'										
+and '2020-12-31' group by 1) a left join (select _visid, property_s from gmg_fba18d75.visitor_properties where property_name = '_uniqid' group by 1,2)b										
+on a._visid=b._visid limit 10;	
+Output:
+										
+_visid	_visid	property_s	788898							
+Si6RT-L6jFNyz1B-	Si6RT-L6jFNyz1B-	788898								
+										
+select * from gmg_fba18d75._http_req_sent where cp_id = '14538' limit 10;		
+Output:
+code	cp_type	cp_id	tp	tp_id	_epoch	_visid	run_id			
+										
+select date_part('year',_epoch),date_part('month',_epoch), count(distinct cp_id) filter (where cp_type ='c') from gmg_fba18d75._http_req_sent										
+where _epoch>'2020-12-01' group by  1,2 order by 1;	
+Output:
+date_part	date_part	count								
+2020	12	1								
+2021	1	1								
+2021	2	1								
+										
+										
+select cp_id,cp_type,count(*) filter(where _epoch between '2020-06-01' and '2020-07-01') as june										
+,count(*) filter(where _epoch between '2020-07-01' and '2020-08-01')as july										
+,count(*) filter(where _epoch between '2020-08-01' and '2020-09-01')as aug										
+,count(*) filter(where _epoch between '2020-09-01' and '2020-10-01')as sep										
+,count(*) filter(where _epoch between '2020-10-01' and '2020-11-01')as oct										
+,count(*) filter(where _epoch between '2020-11-01' and '2020-12-01')as nove										
+,count(*) filter(where _epoch between '2020-12-01' and '2021-01-01')as decm										
+from gmg_fba18d75._http_req_sent group by 1,2;	
+Output:
+										
+cp_type	cpid	june	july		aug	sep	oct	nov	dec	
+56378	ad	0	0	0	0	0	0	0	0	
+14538	c	0	0	0	0	0	1527	20465	1322	
+										
+SELECT property_s from gmg_fba18d75.visitor_properties where property_name= '_uniqid' limit 10;				
+Output:
+property_s										
+										
+										
+select property_s from gmg_fba18d75.visitor_properties where property_name = '_uniqid' and length (property_s)>7 group by 1 limit 10;		
+Output:
+property_s										
+										
+select length(property_s),count(*) from gmg_fba18d75.visitor_properties where property_name = '_uniqid' group by 1;	
+Output:
+										
+length	count									
+										
+select length (property_s), count(distinct _visid),count(distinct property_s) from gmg_fba18d75.visitor_properties										
+where property_name = '_uniqid' group by 1;	
+Output:
+										
+length	count	count								
+										
+select count,count(*) from (select _visid,count(*) from gmg_fba18d75._trigger_fire where cp_id =  '64407'   group by 1)a										
+group by 1 order by 1;	
+Output:
+count	count									
