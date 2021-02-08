@@ -1,0 +1,236 @@
+select * from gmg_fba18d75._trigger_fire limit 2;																	
+cp_type	cp_id	tp	tpid	_epoch	_visid	run_id											
+Select * from gmg_fba18d75._email_open limit 2;																	
+cp_type	cp_id	tp	tpid	run_id	_epoch	_visid											
+Select * from  gmg_fba18d75._email_click limit 2;																	
+link	cp_type	cp_id	tp	tpid	_epoch	_visid	run_id										
+Select * from  gmg_fba18d75._email_sent limit 2;																	
+email	status	run_id	cp_type	cp_id	tp	tpid	_epoch	_visid									
+Select * from  gmg_fba18d75._email_send_error limit 2;																	
+email	status	run_id	cp_type	cp_id	tp	tpid	_epoch	_visid									
+Select * from gmg_fba18d75.email_capture limit 2;																	
+email	source	eventable	platform	_epoch	_visid												
+select * from gmg_fba18d75._push_sent limit 2;																	
+cp_type	cp_id	tp	tpid	_epoch	_visid	run_id	device	chennals	trace_id								
+select * from gmg_fba18d75._push_recved limit 2;																	
+cp_type	cp_id	tp	tpid	_epoch	_visid	run_id	trace_id	device	device_mark	device_model							
+select * from gmg_fba18d75._push_open limit 2;																	
+action 	url	cp_type	cp_id	tp	tpid	run_id	_epoch	_visid	trace_id	device	device_mark	device_model					
+select * from gmg_fba18d75._push_recved_error limit 2;																	
+trace_id	device	device_make	device_model	run_id	error	cp_type	cp_id	tp	tpid	_epoch	_visid						
+select * from gmg_fba18d75._http_req_sent limit 2;																	
+code	run_id	cp_type	cp_id	tp	tpid	_epoch	_visid										
+select * from gmg_fba18d75._http_req_error limit 2;																	
+error	run_id	cp_type	cp_id	tp	tpid	_epoch	_visid	code									
+select * from gmg_fba18d75._notif_view limit 2;																	
+notif	cp_type	cp_id	tp	tpid	_epoch	_visid											
+select * from gmg_fba18d75._notif_click limit 2;																	
+notif	cp_type	cp_id	tp	tpid	_epoch	_visid											
+select * from gmg_fba18d75._notif_close limit 2;																	
+notif	cp_type	cp_id	tp	tpid	_epoch	_visid											
+select * from gmg_fba18d75._mobile_notif_view limit 2;																	
+cp_type	cp_id	tp	tpid	_epoch	_visid												
+select * from gmg_fba18d75.visitor_properties limit 10;																	
+_visid	_epoch	property_name	property_s	property_n	property_as												
+select * from gmg_fba18d75.birthday_campaign limit 10;																	
+email_id	coupon_code	_visid	_epoch	upload_id													
+																	
+																	
+																	
+																	
+campagin-type	cp_type	_visid are sixteen digit 			_email_open	_push_sent	_http_req_sent	_notif_view									
+campagin-id	cp_id	_epoch are date and time			_email_click	_push_recved	_http_req_error	_notif_click									
+touch point	tp	tp are notification			_email_sent	_push_open		_notif_close									
+touch point_id	tp_id	tpid are unique ID			_email_sent_error	_push_recved_error											
+adhoc campagin	ad	cpid are unique ID			_email_capture												
+web push/ browser push	wpn	cp_type are ad/c															
+web notification 	n																
+real time_campagin	c																
+email	et																
+http request	hr																
+app push	pn																
+																	
+																	
+																	
+date wise,tpid,capin wise- aggregate functions																	
+																	
+with tf as (																	
+																	
+select count(*),date(_epoch),tpid,cp_id from gmg_fba18d75._trigger_fire where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+																	
+group by 2,3,4																	
+																	
+), ps as (																	
+																	
+select count(*),date(_epoch),tpid,cp_id from gmg_fba18d75._push_sent where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+																	
+group by 2,3,4																	
+																	
+), pr as (																	
+																	
+select count(*),date(_epoch),tpid,cp_id from gmg_fba18d75._push_recved where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+																	
+group by 2,3,4																	
+																	
+), po as (																	
+																	
+select count(*),date(_epoch),tpid,cp_id from gmg_fba18d75._push_open where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+																	
+group by 2,3,4																	
+																	
+)																	
+																	
+select tf.date,tf.tpid,tf.cp_id,tf.count as triggers, ps.count as push_sent,pr.count as push_recved,po.count as push_open																	
+																	
+from tf left join ps on ps.date = tf.date and ps.cp_id= tf.cp_id and ps.tpid = tf.tpid																	
+																	
+left join pr on pr.date = ps.date and pr.cp_id= ps.cp_id and pr.tpid = ps.tpid																	
+																	
+left join po on po.date = pr.date and po.cp_id= pr.cp_id and po.tpid = pr.tpid																	
+																	
+order by 1																	
+result:																	
+date	tpid	cp_id	triggers	push_sent	push_recved	push_open	aggregate report		diffrence	count(*),date(_epoch),tpid,cp_id		order by					
+_visid	cp_id	trigger_time	time	time	push_open		user level report			_visid,cp_id,tpid		limit 10					
+date	tpid	cp_id	first_name	_visid	trigger	push_sent	_push_recved	_push_open									
+date	tpid	cp_id	first_name	_visid	trigger	push_send	push_recved	email using in Visitor_property									
+																	
+user level report																	
+																	
+with tf as (																	
+select _visid,cp_id,tpid,(_epoch at time zone 'UTC+5:30')as time from gmg_fba18d75._trigger_fire where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 1,2,3,4																	
+																	
+																	
+), ps as (																	
+select _visid,cp_id,tpid,(_epoch at time zone 'UTC+5:30') as time from gmg_fba18d75._push_sent where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 1,2,3,4																	
+																	
+), pr as (																	
+select _visid,cp_id,tpid,(_epoch at time zone 'UTC+5:30') as time from gmg_fba18d75._push_recved where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 1,2,3,4																	
+																	
+), po as (																	
+select _visid,cp_id,tpid,(_epoch at time zone 'UTC+5:30') as time from gmg_fba18d75._push_open where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 1,2,3,4																	
+																	
+)																	
+																	
+select tf._visid,tf.cp_id,tf.time as trigger_time,ps.time,pr.time,po.time as push_open																	
+from tf left join ps on ps._visid=tf._visid and ps.cp_id=tf.cp_id and ps.tpid=tf.tpid																	
+left join pr on ps._visid=pr._visid and ps.cp_id=pr.cp_id and ps.tpid=pr.tpid																	
+left join po on po._visid=pr._visid and po.cp_id=pr.cp_id and po.tpid=pr.tpid																	
+limit 10;																	
+result																	
+_visid	cp_id	trigger_time	time	time	push_open												
+																	
+				Email using in visitor_property													
+																	
+with tf as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._trigger_fire where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), ps as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._push_sent where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), pr as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._push_recved where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), po as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._push_open where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), vp as (																	
+select _visid,property_s from gmg_fba18d75.vw_visitor_properties_uniq where property_name = 'first_name'																	
+group by 1,2																	
+																	
+)																	
+																	
+																	
+select tf.date,tf.tpid,tf.cp_id,vp.property_s as first_name,tf._visid,tf.count as triggers ,ps.count as push_sent,pr.count as push_recved,po.count as push_open																	
+from tf left join ps on ps.date = tf.date and ps._visid = tf._visid and ps.cp_id= tf.cp_id and ps.tpid = tf.tpid																	
+left join pr on pr.date = ps.date and pr._visid = ps._visid and pr.cp_id= ps.cp_id and pr.tpid = ps.tpid																	
+left join po on po.date = pr.date and po._visid = pr._visid and po.cp_id= pr.cp_id and po.tpid = pr.tpid																	
+left join vp on tf._visid = vp._visid																	
+order by 1																	
+																	
+Result 																	
+date	tpid	cp_id	first_name	_visid	trigger	push_sent	_push_recved	_push_open									
+																	
+					email visitor_propertys												
+																	
+with tf as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._trigger_fire where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), eo as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._email_open where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), ec as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._email_click where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), es as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._email_sent where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), ese as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._email_send_error where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), vp as (																	
+select _visid,property_s from gmg_fba18d75.vw_visitor_properties_uniq where property_name = 'first_name'																	
+group by 1,2																	
+																	
+)																	
+																	
+																	
+select tf.date,tf.tpid,tf.cp_id,vp.property_s as first_name,tf._visid,tf.count as triggers ,eo.count as email_open,ec.count as email_click,es.count as email_sent,ese.count as email_sent_error																	
+from tf left join eo on eo.date = tf.date and eo._visid = tf._visid and eo.cp_id= tf.cp_id and eo.tpid = tf.tpid																	
+left join ec on ec.date = eo.date and ec._visid = eo._visid and ec.cp_id= eo.cp_id and ec.tpid = eo.tpid																	
+left join es on es.date = ec.date and es._visid = ec._visid and es.cp_id= ec.cp_id and es.tpid = ec.tpid																	
+left join ese on ese.date =es.date and ese._visid = es._visid and ese.cp_id = es.cp_id and ese.tpid = es.tpid																	
+left join vp on tf._visid = vp._visid																	
+order by 1																	
+Result:																	
+date	tpid	cp_id	first_name	_visid	triggers	email_open	email_click	email_sent	email_send_error								
+																	
+																	
+																	
+																	
+					email using in Visitor_property												
+with tf as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._trigger_fire where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), ps as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._push_sent where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), pr as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._push_recved where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), po as (																	
+select count(*),date(_epoch),tpid,cp_id,_visid from gmg_fba18d75._push_open where cp_type = 'c' and tp = 'pn' and (_epoch at time zone 'UTC+5:30') > now()::date - interval '30 days' and (_epoch at time zone 'UTC+5:30') < now()::date																	
+group by 2,3,4,5																	
+																	
+), vp as (																	
+select _visid,property_s from gmg_fba18d75.vw_visitor_properties_uniq where property_name = 'first_name'																	
+group by 1,2																	
+																	
+)																	
+																	
+																	
+select tf.date,tf.tpid,tf.cp_id,vp.property_s as first_name,tf._visid,tf.count as triggers ,ps.count as push_sent,pr.count as push_recved,po.count as push_open																	
+from tf left join ps on ps.date = tf.date and ps._visid = tf._visid and ps.cp_id= tf.cp_id and ps.tpid = tf.tpid																	
+left join pr on pr.date = ps.date and pr._visid = ps._visid and pr.cp_id= ps.cp_id and pr.tpid = ps.tpid																	
+left join po on po.date = pr.date and po._visid = pr._visid and po.cp_id= pr.cp_id and po.tpid = pr.tpid																	
+left join vp on tf._visid = vp._visid																	
+order by 1																	
+																	
+Result																	
+date	tpid	cp_id	first_name	_visid	trigger	push_send	push_recved										
