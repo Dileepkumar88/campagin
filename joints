@@ -1,0 +1,334 @@
+Difference between INNER JOIN and OUTER JOIN	
+
+An INNER JOIN is such type of join that returns all rows from both the participating tables where the key record of one table is equal to the key records of another table. This type of join required a comparison operator to match rows from the participating tables based on a common field or column of both the tables.																									
+																									
+Where as the OUTER JOIN returns all rows from the participating tables which satisfy the condition and also those rows which do not match the condition will appear in this operation. This result set can appear in three types of format -																									
+																									
+The first one is LEFT OUTER JOIN, in this join includes all the rows from a left table of JOIN clause and the unmatched rows from a right table with NULL values for selected columns.																									
+																									
+The second one is RIGHT OUTER JOIN, in this join includes all rows from the right of JOIN cause and the unmatched rows from the left table with NULL values for selected columns.																									
+																									
+The last one in FULL OUTER JOIN, in this join, includes the matching rows from the left and right tables of JOIN clause and the unmatched rows from left and right table with NULL values for selected columns.																									
+																									
+																									
+																									
+Difference between JOIN and INNER JOIN																									
+JOIN returns all rows from tables where the key record of one table is equal to the key records of another table.																									
+																									
+The INNER JOIN selects all rows from both participating tables as long as there is a match between the columns. An SQL INNER JOIN is same as JOIN clause, combining rows from two or more tables.																									
+																									
+An inner join of A and B gives the result of A intersect B, i.e. the inner part of a Venn diagram intersection.																									
+																									
+Inner joins use a comparison operator to match rows from two tables based on the values in common columns from each table. For example, retrieving all rows where the student identification number is the same for both the students and courses tables.																									
+																									
+Using JOIN Clause																									
+																									
+SELECT * FROM																									
+Table1 JOIN Table2																									
+ON Table1.column_name=Table2.column_name;																									
+Copy																									
+Using INNER JOIN Clause																									
+																									
+SELECT *																									
+FROM Table1 INNER JOIN Table2																									
+ON Table1.column_name= Table2.column_name;																									
+																									
+																									
+Example:																									
+																									
+Here is two table tableX and tableY and they have no duplicate rows in each. In tableX the values ( A,B) are unique and in tableY the values (E,F) are unique, but the values (C and D) are common in both the tables.																									
+table X	table Y																								
+A	C																								
+B	D																								
+C	E																								
+D	F																								
+																									
+																									
+Here is INNER JOIN																									
+																									
+SELECT *																									
+FROM tableX																									
+INNER JOIN tableY on tableX.X = tableY.Y;																									
+Copy																									
+or																									
+																									
+SELECT tableX.*,tableY.*																									
+FROM tableX,tableY																									
+WHERE tableX.X = tableY.Y;																									
+Copy																									
+Output:																									
+																									
+																									
+Here only the matching of both tableX and tableY have appeared in the result set.																									
+																									
+Here is LEFT OUTER JOIN																									
+																									
+SELECT tableX.*,tableY.*																									
+FROM tableX,tableY																									
+WHERE tableX.X = tableY.Y(+)																									
+Copy																									
+or																									
+																									
+SELECT *																									
+FROM tableX																									
+LEFT OUTER JOIN tableY ON tableX.X= tableY.Y																									
+																									
+OUTPUT																									
+X	Y																								
+A	NULL																								
+B	NULL																								
+C	C																								
+D	D																								
+																									
+Here all the rows from tableX that is left side of JOIN clause and all the rows with NULL values for unmatched columns from tableY that is the right side of JOIN clause have appeared.																									
+																									
+Here is RIGHT OUTER JOIN																									
+																									
+SELECT * FROM tableX																									
+RIGHT OUTER JOIN tableY ON tableX.X= tableY.Y																									
+																									
+X	Y																								
+C	C																								
+D	D																								
+NULL	E																								
+NULL	F																								
+																									
+Here all the rows from tableY that is the right side of JOIN clause and all the rows with NULL values for unmatched columns from tableX that is left side of JOIN clause have appeared.																									
+																									
+																									
+Here is FULL OUTER JOIN																									
+																									
+SELECT *																									
+FROM tableX																									
+FULL OUTER JOIN tableY ON tableX.X= tableY.Y																									
+																									
+X	Y																								
+A	NULL																								
+B	NULL																								
+C	C																								
+D	D																								
+NULL	E																								
+NULL	F																								
+																									
+Here all the matching rows from tableX and tableY and all the unmatched rows with NULL values for both the tables have appeared.																									
+																									
+																									
+What is Natural Join in SQL?																									
+We have already learned that an EQUI JOIN performs a JOIN against equality or matching column(s) values of the associated tables and an equal sign (=) is used as comparison operator in the where clause to refer equality.																									
+																									
+The SQL NATURAL JOIN is a type of EQUI JOIN and is structured in such a way that, columns with the same name of associated tables will appear once only.																									
+																									
+Natural Join: Guidelines																									
+																									
+- The associated tables have one or more pairs of identically named columns.																									
+- The columns must be the same data type.																									
+- Don’t use ON clause in a natural join																									
+																									
+Syntax:																									
+																									
+SELECT *																									
+FROM table1																									
+NATURAL JOIN table2;																									
+																									
+What is Cross Join in SQL?																									
+The SQL CROSS JOIN produces a result set which is the number of rows in the first table multiplied by the number of rows in the second table if no WHERE clause is used along with CROSS JOIN.This kind of result is called as Cartesian Product.																									
+																									
+If WHERE clause is used with CROSS JOIN, it functions like an INNER JOIN.																									
+																									
+An alternative way of achieving the same result is to use column names separated by commas after SELECT and mentioning the table names involved, after a FROM clause.																									
+																									
+Syntax:																									
+																									
+SELECT *																									
+FROM table1																									
+CROSS JOIN table2;																									
+Sample table: foods					Sample table: company																				
+ITEM_ID | ITEM_NAME    | ITEM_UNIT | COMPANY_ID					COMPANY_ID | COMPANY_NAME  | COMPANY_CITY																				
+| 1       | Chex Mix     | Pcs       | 16         |					18         | Order All     | Boston       |																				
+| 6       | Cheez-It     | Pcs       | 15         |					| 15         | Jack Hill Ltd | London       |																				
+| 2       | BN Biscuit   | Pcs       | 15         |					| 16         | Akas Foods    | Delhi        |																				
+| 3       | Mighty Munch | Pcs       | 17         |					| 17         | Foodies.      | London       |																				
+| 4       | Pot Rice     | Pcs       | 15					| 19         | sip-n-Bite.   | New York																				
+																									
+																									
+SQL Code:																									
+																									
+SELECT foods.item_name,foods.item_unit,																									
+company.company_name,company.company_city																									
+FROM foods																									
+CROSS JOIN company;																									
+																									
+or																									
+																									
+SQL Code:																									
+																									
+SELECT foods.item_name,foods.item_unit,																									
+company.company_name,company.company_city																									
+FROM foods,company;																									
+																									
+																									
+OUTER JOIN																									
+The SQL OUTER JOIN returns all rows from both the participating tables which satisfy the join condition along with rows which do not satisfy the join condition. The SQL OUTER JOIN operator (+) is used only on one side of the join condition only.																									
+																									
+The subtypes of SQL OUTER JOIN																									
+																									
+LEFT OUTER JOIN or LEFT JOIN																									
+RIGHT OUTER JOIN or RIGHT JOIN																									
+FULL OUTER JOIN																									
+																									
+Syntax:																									
+																									
+Select *																									
+FROM table1, table2																									
+WHERE conditions [+];																									
+																									
+PostgreSQL CONCAT() function																									
+CONCAT(string1,string2..............)			SELECT concat('w',3,'r', 'esource','.','com');																						
+EXAMPLE																									
+CONCAT('D','I','L,'E','E','P')			concat																						
+OUTPUT			----------------																						
+DILEEP			w3resource.com					
+
+
+
+-----------------------------------------------------------------------------------------------------
+
+														
+PostgreSQL CONCAT() function														
+CONCAT(string1,string2..............)			SELECT concat('w',3,'r', 'esource','.','com');											
+EXAMPLE														
+CONCAT('D','I','L,'E','E','P')			concat											
+OUTPUT			----------------											
+DILEEP			w3resource.com											
+														
+														
+FUNCTION														
+PostgreSQL INITCAP() function														
+														
+SELECT initcap('RABINDRANATH TAGORE') 														
+AS "First Character of each word Capital";														
+														
+Sample Output:														
+														
+First Character of each word Capital														
+--------------------------------------														
+Rabindranath Tagore														
+														
+														
+														
+														
+SELECT first_name, last_name,														
+concat(lower(first_name),' ', lower(last_name)) "Name of Employee in lower case",														
+initcap(concat(first_name,' ', last_name)) "Proper Name"														
+FROM employees														
+WHERE department_id=100;														
+														
+OUTPUT														
+first_name  | last_name | Name of Employee in lower case |    Proper Name														
+-------------+-----------+--------------------------------+-------------------														
+Nancy       | Greenberg | nancy greenberg                | Nancy Greenberg														
+Daniel      | Faviet    | daniel faviet                  | Daniel Faviet														
+														
+														
+BIT_LENGTH() function														
+The PostgreSQL bit_length function is used to count the number of bits in a specified string.														
+Syntax:														
+bit_length (str1)														
+str1	A string whose BIT_LENGTH value is to be retrieved.													
+Example: PostgreSQL BIT_LENGTH() function														
+														
+The following PostgreSQL statement will return the length of the given string 'w3resource'' in bits, i.e. 80.														
+														
+Code:														
+SELECT bit_length('w3resource') AS "bit_length";														
+bit_length	10*8													
+------------														
+80														
+														
+LOWER() function														
+The PostgreSQL lower function is used to convert a string from upper case to lower case.														
+Syntax:	lower(string)													
+SELECT lower('W3RESOURCE') AS "Upper to Lower";														
+														
+SELECT first_name,last_name,														
+email,LOWER(email)														
+FROM employees														
+WHERE department_id=20;														
+Example;														
+@gmail														
+@GMAIL	o/p													
+														
+														
+OCTET_LENGTH() function														
+The PostgreSQL octet_length function is used to count the number of bytes in a specified string.														
+														
+Syntax:	octet_length(string)													
+SELECT octet_length('w3resource') AS "octet_length";														
+octet_length														
+10														
+														
+OVERLAY() function														
+The PostgreSQL overlay function is used to replace a specified text or string in place of a text or substring within a mother string. 
+The replacement substring mentioned by the position, from where the replacement substring will start and a number of characters mentioned for the replacement from the specified position.														
+														
+Syntax:														
+overlay(<main_string> placing <replacing_string>														
+from <starting_position> [ for <mumber_of_characters>] )														
+														
+SELECT overlay('w3333333rce' placing 'resou' from 3);														
+overlay														
+w3resou3rce														
+"ex:SELECT overlay('w3333333rce' placing 'resou' from 3 for 4); 
+"														
+overlay														
+w3resou33rce														
+"ex: SELECT overlay('w333333rce' placing 'resou' from 3 for 5);
+
+"														
+overlay														
+w3resource														
+														
+														
+POSITION() function														
+The PostgreSQL position function is used to find the location of a substring within a specified string.														
+														
+Syntax:														
+														
+POSITION(search_string in main_string)														
+														
+SELECT POSITION('our' in 'w3resource');														
+position														
+6														
+														
+SUBSTRING() function														
+The PostgreSQL substring function is used to extract a string containing a specific number of characters from a particular position of a given string.														
+														
+Syntax:														
+														
+substring(string [from <str_pos>] [for <ext_char>])														
+Parameters														
+														
+Name	Description													
+string	The main string from where the character to be extracted.													
+str_pos	Optional. The position of the string from where the extracting will be starting. If this parameter is omitted, the substring function will start at position 1 (which is the first position in the string).													
+ext_char	Optional. A number of characters to be extracted from the string. If this parameter is omitted, the substring function will return the entire string (from the start_position to the end of the string).													
+														
+Example: PostgreSQL SUBSTRING() function														
+														
+The following PostgreSQL statement returns 5 characters starting from the 4th position from the string 'w3resource', that is ‘esour’.														
+														
+Code:														
+														
+SELECT substring('w3resource' from 4 for 5);														
+														
+Sample Output:														
+substring														
+esour														
+(1 row)
+
+
+
+--------------------------------------------------------------------
+
+
+														
