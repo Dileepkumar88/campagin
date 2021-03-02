@@ -1,0 +1,35 @@
+We have a data requirement from canarahsbc team.Please find the below requirement.Request you please check and modify the query if needed.
+
+company id- e710d4ef-8ce3-41c4-9af3-dad4ebdfdfdc
+Requirement - Campaign performance on an user level along with email id of the user. We will be needing detailed reports on visitor id level
+from  trigger fire to email click (tf,email sent,email dlr,email bounced,email open,email click) along with campaign details and email
+
+
+with es as (
+select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,cp_id,cp_type,tpid,tp,_visid from gmg_e710d4ef._email_sent where (_epoch at time zone 'UTC+5:30')between '2021-02-20' and '2021-02-25' group by 1,2,3,4,5,6,7
+
+), ed as (
+select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,cp_id,tpid,tp,_visid,to_email from gmg_e710d4ef.email_dlr where Status_desc='Delivered' and (_epoch at time zone 'UTC+5:30')between '2021-02-20' and '2021-02-25' group by 1,2,3,4,5,6,7
+
+),
+eb as (
+select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,cp_id,tpid,tp,_visid from gmg_e710d4ef.email_dlr where Status_desc!='Delivered' and (_epoch at time zone 'UTC+5:30')between '2021-02-20' and '2021-02-25'  group by 1,2,3,4,5,6
+
+)
+, eo as (
+select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,cp_id,tpid,tp,_visid from gmg_e710d4ef._email_open where (_epoch at time zone 'UTC+5:30')between '2021-02-20' and '2021-02-25'  group by 1,2,3,4,5,6
+
+), ec as (
+select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,cp_id,tpid,tp,_visid from gmg_e710d4ef._email_click where (_epoch at time zone 'UTC+5:30')between '2021-02-20' and '2021-02-25'  group by 1,2,3,4,5,6
+),
+camp as (
+select 'ad' as cp_type,cid,cname from camps union all select 'c' as cp_type,cid,cname from realcamps)
+
+select es.y as year,es.m as month,es.cp_id as campaign_id,camp.cname,es.tpid as template_id,es.tp as template_type,es._visid as email_sent,ed._visid as email_delivered,eb._visid as email_bounced_dropped,eo._visid as email_open,ec._visid as email_clicked,ed.to_email as email
+from es
+left join ed on es.y=ed.y and es.m=ed.m and es.cp_id=ed.cp_id and es.tpid=ed.tpid and es.tp=ed.tp and es._visid=ed._visid
+left join eb on es.y=eb.y and es.m=eb.m and es.cp_id=eb.cp_id and es.tpid=eb.tpid and es.tp=eb.tp and es._visid=eb._visid
+left join eo on es.y=eo.y and es.m=eo.m and es.cp_id=eo.cp_id and es.tpid=eo.tpid and es.tp=eo.tp and es._visid=eo._visid
+left join ec on es.y=ec.y and es.m=ec.m and es.cp_id=ec.cp_id and es.tpid=ec.tpid and es.tp=ec.tp and es._visid=ec._visid
+left join camp on es.cp_id=camp.cid and es.cp_type=camp.cp_type
+limit 10
