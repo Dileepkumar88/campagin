@@ -1,0 +1,212 @@
+Resources
+https://www.postgresql.org/docs/9.5/static/index.html
+https://hashrocket.com/blog/posts/faster-json-generation-with-postgresql
+https://www.datacamp.com/community/tutorials/sql-tutorial-query
+https://blog.statsbot.co/sql-window-functions-tutorial-b5075b87d129
+http://www.silota.com/docs/recipes/
+https://hashrocket.com/blog/posts/16-tips-from-the-2014-winter-miniconf
+https://stackoverflow.com/questions/23320945/postgresql-select-if-string-contains
+
+
+
+Psql commands
+\! cls - clear the psql console
+\d{name} - list the {name} object, name can be tables(t), views(v), schemas(s), functions(f) etc
+\c {database} or \connect {database} - connect to a database
+\d {tablename} - show table columns, datatypes etc.
+\l  or \list - lists databases accessible to the psql session
+\q - quits psql
+\? - help about specific commands
+\timing - timing on/off
+\x - expanded display on/off
+\h - help on syntax of sql commands
+\x auto - psql can automatically switch between vertical and horizontal layout based on the width of output.
+cat .psqlrc - Saving psql Settings and load commands such as \x auto, \timing etc
+
+
+General Queries:
+
+Started Session group by hour:
+
+select date_part('hour',_epoch), count(_visid) from  gmg_921de2cd.started_session
+group by 1
+order by count(_visid) desc
+
+Unique URL counts from visited page:
+
+select split_part(url,'?',1) as page, count(*) as c from gmg_921de2cd.visited_page
+group by 1
+having count(*) > 100
+order by c desc
+
+Epoch in IST
+select  _epoch at time zone 'UTC+5:30' from gmg_921de2cd
+
+Extract field from epoch
+select DATE_PART(field,source) from table
+
+select EXTRACT(field from source) from table
+
+Select TO_CHAR(source, field) from table
+
+
+
+
+Field - century, decade ,year, month, day, hour, minute, second, microseconds, milliseconds, dow, doy, epoch, isodow, isoyear, timezone, timezone_hour, timezone_minute
+
+Source - TIMESTAMP, TIME, or INTERVAL. If the source evaluates to DATE, the function will cast to TIMESTAMP
+
+-- While using to_char with field as month, the result contains spaces at the end. Use trim to remove the spaces.
+
+Concatenate Distinct Values in a column
+array_to_string(array_agg(DISTINCT column),',')
+
+Convert Array to string
+array_to_string(array, text)
+
+Unnest Array
+unnest(ARRAY)
+
+Partial match for multiple words
+LIKE ANY(ARRAY['%abc%','%def]) -- Similar to IN with partial matches for each word
+Escape Underscore
+column_name LIKE '%/_pattern’ - in postgres > 9.0
+column_name LIKE '%//_pattern - in postgres between 8.0 and 9.0
+Find Occurrences of a substring in a string
+(length(text_column) - length(replace(text_column, substring ,'replace with')))/length(substring)
+Extract Time Difference
+extract(epoch from (o._epoch - s._epoch))   			# in seconds
+extract(epoch from (o._epoch - s._epoch))/60  		# in minutes
+extract(epoch from (o._epoch - s._epoch))/3600 		# in hours
+extract(epoch from (o._epoch - s._epoch))/86400		# in days
+
+First 90% rows
+select count(*)
+from (
+    SELECT 
+        t.*,
+         percent_rank() OVER (
+          PARTITION BY tp
+          ORDER BY _epoch
+      )
+      from gmg_7be7d6a8._trigger_fire t
+        WHERE _epoch::date = '2017-10-01' and cp_id = '488'
+        ) t where percent_rank < 0.9
+
+Oldest entry for each email
+select _epoch, _visid, email, source, device from 
+(
+select *, row_number() over(partition by email order by _epoch) as n from gmg_92ca38ca.email_capture
+) t1
+where n = 1
+
+Started Session join with order details in same session
+select * from gmg_921de2cd.ordered_products o
+join gmg_921de2cd.started_session s
+on o._visid = s._visid
+where o._epoch >= '2017-11-01' and o._visid not in 
+(
+select distinct _visid from gmg_921de2cd.order_details
+where _epoch >=  '2017-11-01'
+)
+and s._epoch >= '2017-11-01' and extract(epoch from (o._epoch - s._epoch))/60 < 45
+limit 10
+
+Last 7 days avg:
+avg(column) over (
+    order by d
+    rows between 7 preceding and current row
+  )
+
+Intersection of two series:
+select generate_series(1,1000) intersect 
+ select generate_series(10,15);
+Get Table Names from a Schema
+select table_name from information_schema.tables 
+where table_schema = 'schema_name' 
+and table_name not like '%prt%' and table_name not like '%ds%
+
+Get Column Names of a Table
+select column_name from information_schema.columns 
+where table_schema = 'schema_name' and table_name='table_name'
+
+
+Get Column Names of all Tables
+select table_name, column_name, data_type from information_schema.columns 
+where table_schema = 'schema name' 
+and table_name not ilike '%_prt_%' 
+and table_name not in ('visitor_properties', 'vw_visitor_properties_uniq', 'hidden_events')
+order by 1,2
+
+
+Group Concat in PostgreSQL
+array_agg - returns an array of elements in the group
+array_to_string - concatenates the elements in the array using the given separator. This may not be necessary in some versions
+
+Using array_agg & array_to_string:
+
+select parent_name,
+  array_to_string(array_agg(child_name order by child_name ASC), ',')
+from children
+group by parent_name;
+
+
+Using string_agg:
+
+select parent_name,
+  string_ agg (child_name, ',' order by child_name)
+from children
+group by parent_name;
+
+
+Postgres has a robust set of aggregation functions, and you can similarly aggregate multiple rows with array_agg and json_agg.
+
+By combining array_to_string with array_agg, you can duplicate the behavior of string_agg
+Postgres multiple columns to json
+
+-- converts columns to json object
+
+SELECT id, json_build_object('name',item_name,'category',item_category,'quantity',item_quantity) AS data
+FROM table;
+
+-- aggregates above columns into array of json objects
+
+select bill_no, json_agg(json_build_object('name',item_name,'category',item_category,'quantity',item_quantity))as items
+from table
+group by bill_no
+
+
+SELECT id, row_to_json((SELECT d FROM (SELECT name, addr) d)) AS data
+FROM table;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Finding if any part of the given string is a part of a column in the table
+
+select * from test1;
+ id | location  
+----+-----------
+ 1  | Hyderabad
+ 2  | Chennai
+ 3  | Kolkata
+ 4  | Mumbai
+
+select * from test1 where 'Hyderabad, Mumbai - India' like '%' || location || '%';
+ id | location  
+----+-----------
+ 1  | Hyderabad
+ 4  | Mumbai
+
+
