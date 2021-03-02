@@ -1,0 +1,29 @@
+Reguest you to please check the below query and make the necessary changes if required.
+
+company id- e710d4ef-8ce3-41c4-9af3-dad4ebdfdfdc
+Requirement - Campaign performance - date of the execution,sent,delivered and not delivered status and click along with campaign names and details.
+
+
+with ss as (
+select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,date_part('day',(_epoch at time zone 'UTC+5:30')) as d,cp_id,cp_type,tpid,tp,run_id,count(distinct _visid),min(_epoch at time zone 'UTC+5:30') as dt from gmg_e710d4ef._http_req_sent where (_epoch at time zone 'UTC+5:30')between '2021-02-20' and '2021-03-01'  group by 1,2,3,4,5,6,7,8 having count(distinct _visid) > 10
+
+), sd as (
+select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,date_part('day',(_epoch at time zone 'UTC+5:30')) as d,cp_id,tpid,tp,run_id,count(distinct _visid) from gmg_e710d4ef.sms_dlr_tracker where reason='DELIVRD' and (_epoch at time zone 'UTC+5:30')between '2021-02-20' and '2021-03-01'  group by 1,2,3,4,5,6,7
+
+),
+sb as (
+select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,date_part('day',(_epoch at time zone 'UTC+5:30')) as d,cp_id,tpid,tp,run_id,count(distinct _visid) from gmg_e710d4ef.sms_dlr_tracker where reason != 'DELIVRD' and (_epoch at time zone 'UTC+5:30')between '2021-02-20' and '2021-03-01'  group by 1,2,3,4,5,6,7
+
+)
+, sc as (
+select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,date_part('day',(_epoch at time zone 'UTC+5:30')) as d,cp_id,tpid,tp,run_id,count(distinct _visid) from gmg_e710d4ef._sms_click where (_epoch at time zone 'UTC+5:30')between '2021-02-20' and '2021-03-01'  group by 1,2,3,4,5,6,7
+),
+camp as (
+select 'ad' as cp_type,cid,cname from camps union all select 'c' as cp_type,cid,cname from realcamps)
+
+select ss.run_id as run_id,ss.cp_id as campaign_id,camp.cname,date_part('year',ss.dt)||'-'||date_part('month',ss.dt)||'-'||date_part('day',ss.dt)||' '||date_part('hour',ss.dt)||':'||date_part('minute',ss.dt)||':'||date_part('second',ss.dt) as execution_time,ss.tpid as template_id,ss.tp as template_type,ss.count as sms_sent,sd.count as sms_deliversd,sb.count as sms_failed,sc.count as sms_clicked
+from ss
+left join sd on ss.y=sd.y and ss.m=sd.m and ss.d=sd.d and ss.cp_id=sd.cp_id and ss.tpid=sd.tpid and ss.tp=sd.tp and ss.run_id=sd.run_id
+left join sb on ss.y=sb.y and ss.m=sb.m and ss.d=sb.d and ss.cp_id=sb.cp_id and ss.tpid=sb.tpid and ss.tp=sb.tp and ss.run_id=sb.run_id
+left join sc on ss.y=sc.y and ss.m=sc.m and ss.d=sc.d and ss.cp_id=sc.cp_id and ss.tpid=sc.tpid and ss.tp=sc.tp and ss.run_id=sc.run_id
+left join camp on ss.cp_id=camp.cid and ss.cp_type=camp.cp_type
