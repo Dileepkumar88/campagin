@@ -1,0 +1,321 @@
+with vp as
+(
+   select
+      _visid,
+      serialnumber,
+      customerid,
+      componentid,
+      cp_id,
+      email
+   from
+      (
+         select
+            _visid,
+            serialnumber,
+            customerid,
+            componentid,
+            '104585' as cp_id,
+            email
+         from
+            gmg_f993649e.efl_oc_campaign
+         where
+            email is not null
+            and
+            (
+               _epoch at time zone 'UTC+5:30'
+            )
+            ::date >= '2021-02-27'
+         union
+         select
+            _visid,
+            serialnumber,
+            customerid,
+            componentid,
+            '104584' as cp_id,
+            email
+         from
+            gmg_f993649e.efl_ow_campaign
+         where
+            email is not null
+            and
+            (
+               _epoch at time zone 'UTC+5:30'
+            )
+            ::date >= '2021-02-27'
+         union
+         select
+            _visid,
+            serialnumber,
+            customerid,
+            componentid,
+            '104590' as cp_id,
+            email
+         from
+            gmg_f993649e.efl_amc_to_amc_generic
+         where
+            email is not null
+            and
+            (
+               _epoch at time zone 'UTC+5:30'
+            )
+            ::date >= '2021-02-27'
+         union
+         select
+            _visid,
+            serialnumber,
+            customerid,
+            componentid,
+            '104593' as cp_id,
+            email
+         from
+            gmg_f993649e.efl_generic_amc_renewal
+         where
+            email is not null
+            and
+            (
+               _epoch at time zone 'UTC+5:30'
+            )
+            ::date >= '2021-02-27'
+      )
+      a
+)
+,
+es as
+(
+   select
+      _visid,
+      (
+         _epoch at time zone 'UTC+5:30'
+      )
+      as _epoch,
+      cp_id,
+      tpid,
+      status
+   from
+      gmg_f993649e._email_sent
+   where
+      cp_id in
+      (
+         '104584',
+         '104590',
+         '104593',
+         '104585'
+      )
+      and
+      (
+         _epoch at time zone 'UTC+5:30'
+      )
+      ::date >= '2021-02-27'
+      and run_id not in
+      (
+         '511860',
+         '511862'
+      )
+   union all
+   select
+      _visid,
+      (
+         _epoch at time zone 'UTC+5:30'
+      )
+      as _epoch,
+      cp_id,
+      tpid,
+      status
+   from
+      gmg_f993649e._email_send_error
+   where
+      cp_id in
+      (
+         '104584',
+         '104590',
+         '104593',
+         '104585'
+      )
+      and
+      (
+         _epoch at time zone 'UTC+5:30'
+      )
+      ::date >= '2021-02-27'
+      and run_id not in
+      (
+         '511860',
+         '511862'
+      )
+)
+,
+ed as
+(
+   select
+      _visid,
+      to_timestamp(stime, 'YYYY-MM-DD HH24:MI:SS') as _epoch,
+      cp_id,
+      tpid,
+      status,
+      status_desc,
+      reason,
+      mta_time,
+      domain,
+      from_email,
+      to_email,
+      mail_subject
+   from
+      gmg_f993649e.ds_data_5081 as a
+      left join
+         (
+            select
+               _visid,
+               property_s
+            from
+               (
+                  select
+                     _visid,
+                     property_s,
+                     row_number() over (partition by _visid
+                  order by
+                     _epoch desc) as rnk
+                  from
+                     gmg_f993649e.visitor_properties
+                  where
+                     property_name = '_uniqid'
+               )
+               a
+            where
+               rnk = 1
+         )
+         b
+         on a.serialnumber = b.property_s
+)
+,
+eo as
+(
+   select
+      *
+   from
+      (
+         select
+            _visid,
+            (
+               _epoch at time zone 'UTC+5:30'
+            )
+            as _epoch,
+            cp_id,
+            tpid,
+            row_number() over (partition by _visid, cp_id, tpid
+         order by
+            _epoch) as rnk
+         from
+            gmg_f993649e._email_open
+         where
+            (
+               _epoch at time zone 'UTC+5:30'
+            )
+            ::date >= '2021-02-27'
+      )
+      a
+   where
+      rnk = 1
+)
+,
+ec as
+(
+   select
+      _visid,
+      (
+         _epoch at time zone 'UTC+5:30'
+      )
+      as _epoch,
+      cp_id,
+      tpid,
+      link,
+      case
+         when
+            link like '%www.eurekaforbes.com%'
+         then
+            'P'
+         when
+            link like '%ef.ux1.in%'
+         then
+            'C'
+         else
+            NULL
+      end
+      as click_type
+   from
+      gmg_f993649e._email_click
+   where
+      (
+         _epoch at time zone 'UTC+5:30'
+      )
+      ::date >= '2021-02-27'
+)
+, cps as
+(
+   select
+      *
+   from
+      camps
+)
+select
+   vp._visid,
+   vp.serialnumber as serialnumber,
+   vp.customerid as customerid,
+   vp.componentid as componentid,
+   vp.email,
+   cname as campaign_name,
+   es.status as sent_status,
+   date_part('year', es._epoch) || '-' || date_part('month', es._epoch) || '-' || date_part('day', es._epoch) || ' ' || date_part('hour', es._epoch) || ':' || date_part('minute', es._epoch) || ':' || date_part('second', es._epoch) as sent_time,
+   case
+      when
+         ed.status_desc is null
+      then
+         'no DLR'
+      else
+         ed.status_desc
+   end
+   as delivery_status , ed.status as delivery_status_code , ed.reason as reason , mta_time as delivered_time , ed.domain as email_domain , ed.from_email , ed.to_email , ed.mail_subject ,
+   case
+      when
+         eo._visid is not null
+      then
+         'opened'
+      else
+         'not opened'
+   end
+   as open_status ,
+   case
+      when
+         ec._visid is not null
+      then
+         'clicked'
+      else
+         'not clicked'
+   end
+   as click_status , ec.link , ec.click_type
+from
+   vp
+   left join
+      es
+      on vp._visid = es._visid
+      and vp.cp_id = es.cp_id
+   left join
+      ed
+      on es._visid = ed._visid
+      and es.cp_id = ed.cp_id
+      and es.tpid = ed.tpid
+   left join
+      eo
+      on ed._visid = eo._visid
+      and ed.cp_id = eo.cp_id
+      and ed.tpid = eo.tpid
+      and ed._epoch <= eo._epoch
+   left join
+      ec
+      on eo._visid = ec._visid
+      and eo.cp_id = ec.cp_id
+      and eo.tpid = ec.tpid
+      and eo._epoch <= ec._epoch
+   left join
+      cps
+      on es.cp_id = cps.cid
+)
+a
