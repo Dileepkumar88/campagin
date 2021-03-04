@@ -1,0 +1,155 @@
+VALUE FIRST MAILERS DAILY
+
+
+with a as (
+select cp_id,tpid,count (distinct _visid) from gmg_1bcef8b8._http_req_sent where (_epoch at time zone 'UTC+5:30')::date = current_date - 1
+ group by 1,2 ),
+b as (
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8.delivered where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+
+c as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8.open where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+d as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8.click where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+f as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8.bounce where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+g as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8.dropped where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+camp as (
+select cid,cname from gmg_1bcef8b8.camps
+)
+
+select a.cp_id,camp.cname as campaign_name,a.tpid, a.count as sent, b.count as delivered, c.count as open, d.count as click, f.count as bounced, g.count as dropped from a 
+left join b on a.cp_id = b.cp_id and a.tpid=b.tpid 
+left join c on a.cp_id = c.cp_id and a.tpid=c.tpid 
+left join d on a.cp_id = d.cp_id and a.tpid=d.tpid 
+left join f on a.cp_id=f.cp_id and a.tpid=f.tpid 
+left join g on a.cp_id=g.cp_id and a.tpid=g.tpid 
+left join camp on a.cp_id = camp.cid
+  order by 1,2
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+VALUE FIRST MAILERS WEEKLY
+
+
+with a as (
+select cp_id,tpid,count (distinct _visid) from gmg_1bcef8b8._http_req_sent where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1
+ group by 1,2 ),
+b as (
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8.delivered where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+
+c as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8.open where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+d as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8.click where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+f as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8.bounce where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+g as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8.dropped where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+camp as (
+select cid,cname from gmg_1bcef8b8.camps
+)
+
+select a.cp_id,camp.cname as campaign_name,a.tpid, a.count as sent, b.count as delivered, c.count as open, d.count as click, f.count as bounced, g.count as dropped from a 
+left join b on a.cp_id = b.cp_id and a.tpid=b.tpid 
+left join c on a.cp_id = c.cp_id and a.tpid=c.tpid 
+left join d on a.cp_id = d.cp_id and a.tpid=d.tpid 
+left join f on a.cp_id=f.cp_id and a.tpid=f.tpid 
+left join g on a.cp_id=g.cp_id and a.tpid=g.tpid 
+left join camp on a.cp_id = camp.cid
+  order by 1,2
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+NETCORE MAILERS DAILY
+
+
+with a as (
+select cp_id,tpid,count (distinct _visid) from gmg_1bcef8b8._email_sent where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+b as (
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_delivered where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+
+c as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_opened where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+d as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_click where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+e as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_invalid where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+f as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_bounced where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+g as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_dropped where (_epoch at time zone 'UTC+5:30')::date = current_date - 1 group by 1,2),
+camp as (
+select cid,cname from gmg_1bcef8b8.camps
+)
+
+select a.cp_id,camp.cname as campaign_name,a.tpid, a.count as sent, b.count as delivered, c.count as open, d.count as click, e.count as invalid, f.count as bounced, g.count as dropped from
+ a left join b on a.cp_id = b.cp_id and a.tpid=b.tpid 
+ left join c on a.cp_id = c.cp_id and a.tpid=c.tpid 
+ left join d on a.cp_id = d.cp_id and a.tpid=d.tpid 
+ left join e on a.cp_id=e.cp_id and a.tpid=e.tpid 
+ left join f on a.cp_id=f.cp_id and a.tpid=f.tpid 
+ left join g on a.cp_id=g.cp_id and a.tpid=g.tpid 
+ left join camp on a.cp_id=camp.cid 
+ order by 1,2
+
+
+
+ ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+ NETCORE MAILERS WEEKLY
+
+
+with a as (
+select cp_id,tpid,count (distinct _visid) from gmg_1bcef8b8._email_sent where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+b as (
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_delivered where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+
+c as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_opened where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+d as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_click where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+e as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_invalid where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+f as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_bounced where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+g as (
+
+select cp_id,tpid,count(distinct _visid) from gmg_1bcef8b8._email_dropped where (_epoch at time zone 'UTC+5:30')::date >= current_date-7 and (_epoch at time zone 'UTC+5:30')::date < current_date-1 group by 1,2),
+camp as (
+select cid,cname from gmg_1bcef8b8.camps
+)
+
+select a.cp_id,camp.cname as campaign_name,a.tpid, a.count as sent, b.count as delivered, c.count as open, d.count as click, e.count as invalid, f.count as bounced, g.count as dropped from
+ a left join b on a.cp_id = b.cp_id and a.tpid=b.tpid 
+ left join c on a.cp_id = c.cp_id and a.tpid=c.tpid 
+ left join d on a.cp_id = d.cp_id and a.tpid=d.tpid 
+ left join e on a.cp_id=e.cp_id and a.tpid=e.tpid 
+ left join f on a.cp_id=f.cp_id and a.tpid=f.tpid 
+ left join g on a.cp_id=g.cp_id and a.tpid=g.tpid 
+ left join camp on a.cp_id=camp.cid 
+ order by 1,2
