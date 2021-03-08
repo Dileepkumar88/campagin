@@ -1,0 +1,39 @@
+company id - bf1f9c51-e7d2-4814-8f2c-6e7fef7db398
+We will be requiring the  State, City, District, Phone Number of the user along with user journey of the product( the product (name,link and id ) viewed,add to cart and check out success. )
+
+State,city and district can be pulled from user_visit event and remaining details from prod_view,add_to_cart and checkout_success events 
+
+
+
+
+
+ith pv as (
+    select _visid,_epoch,prod_id,prod_name,produrl,sku from gmg_bf1f9c51.prod_view where _epoch >= now()-interval '6 days' and _visid = 'hUmzRuBe_kca92ou'
+
+), atc as (
+    select _visid,_epoch,prod_id,prod_name,produrl,sku from gmg_bf1f9c51.add_to_cart where _epoch >= now()-interval '6 days'
+
+), chkout as (
+    select  _visid,_epoch,phone,customer_name,(json_array_elements(items::json)) ->> 'prod_name' as prod_name ,(json_array_elements(items::json)) ->> 'produrl' as produrl ,(json_array_elements(items::json)) ->> 'sku' as sku from gmg_bf1f9c51.checkout_success where _epoch >= now()-interval '6 days'
+
+
+), user_visit as (
+    select * from (select _visid,city,state,country,district,pincode,row_number() over (partition by _visid order by _epoch desc) as rnk from gmg_bf1f9c51._user_visit)a where rnk=1
+)
+
+select
+ pv._visid
+,customer_name
+,state
+,district
+,city
+,phone
+,pv.prod_name
+,pv.prod_id
+,pv.produrl
+,case when atc._visid is not null then 'YES' else 'NO' end as add_to_cart
+,case when chkout._visid is not null then 'YES' else 'NO' end as purchase
+from pv
+left join atc on pv._visid=atc._visid and pv.sku=atc.sku and pv._epoch <= atc._epoch
+left join chkout on pv._visid=chkout._visid and pv.sku = chkout.sku and pv._epoch<=chkout._epoch
+left join user_visit on pv._visid=user_visit._visid
