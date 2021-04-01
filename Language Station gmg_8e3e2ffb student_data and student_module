@@ -1,0 +1,35 @@
+Please print level,language_programme and end date parameter of all the entries in student_data and student module data for the users who have email sent for the campaign - 114796
+and runid - 713812
+
+For example the query should return this for a particular user.
+
+visid, email , level 1, language_programme_1 , end_date 1 , level2 , language_programme 2, end_date 2. ... and so on
+
+company id - 8e3e2ffb-b1e6-48ca-9d6e-5a972247ab66
+
+raised by Akash
+
+
+
+
+
+with
+b as (select * from gmg_8e3e2ffb.student_module_data where  (_epoch at time zone 'UTC+5:30'):: date ='2021-03-05'),
+c as (select cp_id,run_id,_visid,tpid from gmg_8e3e2ffb._email_sent where cp_id = '114796' and run_id = '713812' and
+     (_epoch at time zone 'UTC+5:30'):: date ='2021-03-05')
+  select * from b left join c on b._visid= c._visid 
+-------------------------------------------
+
+with a as (
+select cp_id,tpid,_visid,_epoch from gmg_8e3e2ffb._email_open where _epoch between '2021-03-01' and '2021-03-18'
+
+),b as (
+select _visid,_epoch from gmg_8e3e2ffb._email_unsubscribe where _epoch between '2021-03-01' and '2021-03-18'
+)
+
+select a.cp_id,a.tpid,a._visid,a._epoch as open_time,b._epoch as unsub_time
+from a
+join b on a._visid= b._visid and a._epoch <= b._epoch and b._epoch <= a._epoch + interval '1 hour' limit 10
+
+
+
