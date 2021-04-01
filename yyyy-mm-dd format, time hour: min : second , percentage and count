@@ -9,6 +9,9 @@ step 3:-part('year',ss.dt) as year
 ,date_part('day',ss.dt) as day
 ,date_part('hour',ss.dt)||':'||date_part('minute',ss.dt)||':'||date_part('second',ss.dt) as time
 
+time---> time hour:minute:second
+,date_part('hour',ss.dt)||':'||date_part('minute',ss.dt)||':'||date_part('second',ss.dt) as time
+
 
 
 --------------------------------------
