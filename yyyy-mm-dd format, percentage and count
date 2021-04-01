@@ -1,0 +1,82 @@
+yyyy-mm-dd format:-
+
+step 1:- date_part('year',tf.run_date)||'-'||date_part('month',tf.run_date)||'-'||date_part('day',tf.run_date) as run_date 
+
+step 2 :- select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,date_part('day',(_epoch at time zone 'UTC+5:30')) as d 
+
+step 3:-part('year',ss.dt) as year
+,date_part('month',ss.dt) as month
+,date_part('day',ss.dt) as day
+,date_part('hour',ss.dt)||':'||date_part('minute',ss.dt)||':'||date_part('second',ss.dt) as time
+
+
+
+--------------------------------------
+percent (delivery_percent/failed_percent......):-
+step 2:-
+select
+round((sd.count::numeric/(case when ss.count=0 then 1 else ss.count end)*100),2) as delivery_percent
+,sb.count as sms_failed
+,round((sb.count::numeric/(case when ss.count=0 then 1 else ss.count end)*100),2) as failed_percent
+,sc.c as sms_clicked
+,round((sc.c::numeric/(case when sd.count=0 then 1 else sd.count end)*100),2) as total_click_percent
+,sc.u as unique_sms_clicked
+,round((sc.u::numeric/(case when sd.count=0 then 1 else sd.count end)*100),2) as unique_click_percent
+
+
+count(sms_sent/sms_delivered):-
+
+,ss.count as sms_sent
+,sd.count as sms_delivered
+---------------------------------------------------------------------------------
+sample query:-
+
+with ss as (
+    select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,
+  date_part('day',(_epoch at time zone 'UTC+5:30')) as d,cp_id,cp_type,tpid,tp,run_id,count(distinct _visid),min(_epoch at time zone 'UTC+5:30') as dt
+  from gmg_8e3e2ffb._http_req_sent
+  where (_epoch at time zone 'UTC+5:30')::date between current_date-7 and current_date  
+  group by 1,2,3,4,5,6,7,8 having count(distinct _visid) > 10
+
+), sd as (
+    select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,date_part('day',(_epoch at time zone 'UTC+5:30')) as d,cp_id,tpid,tp,run_id,count(distinct _visid),min(message) as msg from gmg_8e3e2ffb.sms_dlr_tracker where reason='DELIVRD' and (_epoch at time zone 'UTC+5:30')::date between current_date-7 and current_date   group by 1,2,3,4,5,6,7
+
+),
+sb as (
+    select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,date_part('day',(_epoch at time zone 'UTC+5:30')) as d,cp_id,tpid,tp,run_id,count(distinct _visid),min(message) as msg from gmg_8e3e2ffb.sms_dlr_tracker where reason != 'DELIVRD' and (_epoch at time zone 'UTC+5:30')::date between current_date-7 and current_date   group by 1,2,3,4,5,6,7
+
+)
+, sc as (
+    select date_part('year',(_epoch at time zone 'UTC+5:30')) as y,date_part('month',(_epoch at time zone 'UTC+5:30')) as m,date_part('day',(_epoch at time zone 'UTC+5:30')) as d,cp_id,tpid,tp,run_id,count(_visid) as c,count(distinct _visid) as u,min(link) from gmg_8e3e2ffb._sms_click where (_epoch at time zone 'UTC+5:30')::date between current_date-7 and current_date   group by 1,2,3,4,5,6,7
+),
+camp as (
+    select 'ad' as cp_type,cid,cname from adhoccamps union all select 'c' as cp_type,cid,cname from realcamps
+)
+
+select
+ ss.run_id as run_id
+,ss.cp_id as campaign_id
+,camp.cname
+,camp.cid
+,date_part('year',ss.dt) as year
+,date_part('month',ss.dt) as month
+,date_part('day',ss.dt) as day
+,date_part('hour',ss.dt)||':'||date_part('minute',ss.dt)||':'||date_part('second',ss.dt) as time
+,ss.tpid as template_id
+,ss.tp as template_type
+,sb.msg as content
+,sc.min as CTA_url
+,ss.count as sms_sent
+,sd.count as sms_delivered
+,round((sd.count::numeric/(case when ss.count=0 then 1 else ss.count end)*100),2) as delivery_percent
+,sb.count as sms_failed
+,round((sb.count::numeric/(case when ss.count=0 then 1 else ss.count end)*100),2) as failed_percent
+,sc.c as sms_clicked
+,round((sc.c::numeric/(case when sd.count=0 then 1 else sd.count end)*100),2) as total_click_percent
+,sc.u as unique_sms_clicked
+,round((sc.u::numeric/(case when sd.count=0 then 1 else sd.count end)*100),2) as unique_click_percent
+from ss
+left join sd on ss.y=sd.y and ss.m=sd.m and ss.d=sd.d and ss.cp_id=sd.cp_id and ss.tpid=sd.tpid and ss.tp=sd.tp and ss.run_id=sd.run_id
+left join sb on ss.y=sb.y and ss.m=sb.m and ss.d=sb.d and ss.cp_id=sb.cp_id and ss.tpid=sb.tpid and ss.tp=sb.tp and ss.run_id=sb.run_id
+left join sc on ss.y=sc.y and ss.m=sc.m and ss.d=sc.d and ss.cp_id=sc.cp_id and ss.tpid=sc.tpid and ss.tp=sc.tp and ss.run_id=sc.run_id
+left join camp on ss.cp_id=camp.cid and ss.cp_type=camp.cp_type
