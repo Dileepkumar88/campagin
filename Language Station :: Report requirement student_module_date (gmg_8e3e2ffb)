@@ -1,0 +1,24 @@
+
+task:-Please find the below requirement
+
+company id - 8e3e2ffb-b1e6-48ca-9d6e-5a972247ab66
+
+We get student data in an event called student_module_date.A student can do multiple courses and levels.
+Any student who have class end_date greater than the current date on any course/level will be considered as an active user.
+
+So request you to please write query to pull active users on daily basis.Please let us know if you have any queries/concerns
+
+
+
+Raised By - Aparna
+-------->
+
+select * from (select *,row_number() over (partition by _visid order by status) as rnkk
+               from (select _visid,email,_epoch,to_date(end_date,'DD-MM-YYYY') as end_date, case when to_date
+(end_date,'DD-MM-YYYY') >= current_date then 'active' when to_date(end_date,'DD-MM-YYYY') is null then 'NULL'
+           else 'not_active' end as status,row_number() over (partition by _visid,case when 
+ to_date(end_date,'DD-MM-YYYY') >= current_date then 'active' else 'not_active' end order by 2) as rnk 
+      from gmg_8e3e2ffb.test30 where _epoch >= '2021-03-05')a where rnk=1)a where rnkk=1;
+      
+      ---------------------------------------------------------------------------------------------------------------------------------------------------
+      select _visid,_epoch,to_date(end_date,'YYYY-MM-DD') as end_date from gmg_8e3e2ffb.student_module_data where _epoch >= current_date-4 and end_date::date > current_date
