@@ -1,0 +1,370 @@
+Email_summary_report:
+Campaignt Name,	Campaign ID,	Subject	Sent Date,	Total Published	Sent,	Delivered	Bounces	Not Sent,	Total Opens	Total, Opens Percentage,	Total Clicks,	Total Clicks Percentage,
+	Unique Opens,	Unique Opens Percentage,	Unique Clicks,	Unique Clicks Percentage,	unsub,	abuse,	Msg size,	Forward	Event, Names	Segments, Names	Unique Conversions,	Total Revenue,	Campaign Type
+  
+  with 
+
+es as ( select cp_id,tpid,tp,cp_type,count(distinct _visid) as c,min(_epoch at time zone 'UTC+5:30') as sent_date
+  from gmg_baf6d165._email_sent where (_epoch at time zone 'UTC+5:30')between '2021-04-01' and '2021-04-13'  group by 1,2,3,4),
+  
+ ed as (
+    select cp_id,tpid,tp,cp_type,count(distinct _visid),min(_epoch at time zone 'UTC+5:30') as sent_date
+  from gmg_baf6d165.email_dlr where reason='DELIVRD' and (_epoch at time zone 'UTC+5:30')
+  between '2021-04-01'and '2021-04-13'  group by 1,2,3,4),
+  
+eb as( select cp_id,tpid,tp,cp_type,count(distinct _visid),min(_epoch at time zone 'UTC+5:30') as sent_date
+  from gmg_baf6d165.email_dlr where reason != 'Delivered' and (_epoch at time zone 'UTC+5:30')between '2021-04-01' and '2021-04-13'
+      group by 1,2,3,4
+     ),
+ec as (
+  select cp_id,tpid,tp,cp_type,count(distinct _visid) as u,count(_visid) as c,min(_epoch at time zone 'UTC+5:30') as sent_date
+  from gmg_baf6d165._email_click where (_epoch at time zone 'UTC+5:30')between '2021-04-01' and '2021-04-13'  group by 1,2,3,4
+),
+eo as ( select cp_id,tpid,tp,cp_type,count(_visid) as c,count(distinct _visid )as u ,min(_epoch at time zone 'UTC+5:30') as sent_date
+  from gmg_baf6d165._email_open where (_epoch at time zone 'UTC+5:30')between '2021-04-01' and '2021-04-01'  group by 1,2,3,4
+
+)
+       
+select
+es.cp_id as campaignt_name    
+,es.cp_type as campaignt_type
+,ec.tpid as template_id
+,ed.tp as touchpoint
+,ed.count as email_dlr_tracker            
+,eb.count as email_bounce
+,ec.c as email_sent  
+,es.c as email_click
+,eo.c as email_open
+,round((eo.c::numeric/(case when ed.count =0 then 1 else ed.count end)*100),2)as total_open_percent
+,ed.count as email_delivered
+,round((ed.count::numeric/(case when ec.c=0 then 1 else ec.c end)*100),2) as delivery_percent
+,eb.count as email_failed
+,round((eb.count::numeric/(case when ec.c=0 then 1 else ec.c end)*100),2) as failed_percent
+,eo.c as email_open
+,round((eo.c::numeric/(case when ed.count=0 then 1 else ed.count end)*100),2) as total_open_percent
+,eo.u as unique_email_open
+,round((eo.u::numeric/(case when ed.count=0 then 1 else ed.count end)*100),2) as unique_open_percent
+,ec.c as email_clicked
+,round((ec.c::numeric/(case when eo.c=0 then 1 else eo.c end)*100),2) as total_click_percent
+,ec.u as unique_email_clicked
+,round((ec.u::numeric/(case when eo.u=0 then 1 else eo.u end)*100),2) as unique_click_percent
+ 
+ 
+  from es   
+      
+      left join ed on es.cp_id= ed.cp_id and es.tpid= ed.tpid and es.tp = ed.tp and es.cp_type=ed.cp_type
+      left join eb on es.cp_id= eb.cp_id and es.tpid= eb.tpid and es.tp = eb.tp and es.cp_type=eb.cp_type
+      left join ec on es.cp_id= ec.cp_id and es.tpid= ec.tpid and es.tp = ec.tp and es.cp_type=ec.cp_type
+      left join eo on es.cp_id= eo.cp_id and es.tpid= eo.tpid and es.tp = eo.tp and es.cp_type=eo.cp_type
+      
+      [If you add camp :
+      camp as (
+    select 'ad' as cp_type,cid,cname from adhoccamps union all select 'c' as cp_type,cid,cname from realcamps
+)
+select camp.cname
+  left join camp on es.cp_id=camp.cid and es.cp_type=camp.cp_type]
+      -----------------------------------------------------------------------------------------------------------------------------------
+      user level email_click
+SrNo	Primary Key	Email ID	Mobile	links	FirstClick	LatestClick	Total clicks
+
+
+with  a as (
+  select _visid,min(_epoch at time zone 'UTC+5:30'),max(_epoch at time zone 'UTC+5:30'),count(*)
+from gmg_baf6d165._email_click where  (_epoch at time zone 'UTC+5:30')  between' 2021-03-01' and '2021-03-31' group by 1),
+b as (
+  select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'mobile_number')a where rnk=1),
+c as (select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'email')a where rnk=1)
+ 
+ 
+ 
+ 
+ select a.min as firstClick, a.max as latestClick,a.count as TotalClick,a._visid as Primary_key,
+ b.property_s AS Mobile_number, 
+ c.property_s as Email
+
+ 
+ from a left join b on 
+ a._visid= b._visid
+ left join c on a._visid = c._visid
+      
+ --------------------------------------------------------------------------------------------------------------------
+ user level email_sent
+SrNo	Broadcast Date	Primary Key 	Email ID	Mobile	Details
+
+
+with  a as (
+  select _visid  ,max(_epoch at time zone 'UTC+5:30'),count(*)
+from gmg_baf6d165._email_sent where  (_epoch at time zone 'UTC+5:30')  between' 2021-03-01' and '2021-03-31' group by 1),
+b as (
+  select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'mobile_number')a where rnk=1),
+c as (select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'email')a where rnk=1)
+             
+ select a._visid as Primary_key,a.max as Broadcast_date,
+ b.property_s as mobile_number,
+ c.property_s as Email
+ 
+ 
+ from a left join b on 
+ a._visid= b._visid
+ left join c on a._visid = c._visid
+
+  --------------------------------------------------------------------------
+ user level open email_open
+
+SrNo	Campaign Open Date	,Primary Key 	Email ID	Mobile	Details	Device	Operating System	Browser
+select * from gmg_baf6d165._email_open limit 20
+
+with  a as (
+  select _visid ,cp_id,min(_epoch at time zone 'UTC+5:30'),count(*)
+from gmg_baf6d165._email_open where  (_epoch at time zone 'UTC+5:30')  between' 2021-03-01' and '2021-03-31' group by 1,2),
+b as (
+  select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'mobile_number')a where rnk=1),
+c as (select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'email')a where rnk=1),
+ d as (select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'Operating_system')a where rnk=1),
+e as (select _visid,property_s from gmg_baf6d165.vw_visitor_properties_uniq where property_name = 'Browser' group by 1,2 )
+
+ select a._visid as Primary_key,a.min as campaignOpenDate,
+ b.property_s as mobile_number,
+ c.property_s as email,
+ d.property_s as Operating_system,
+ e.property_s as browser
+ from a
+
+ Left join b on a._visid= b._visid
+ left join c on a._visid = c._visid
+ left join d on a._visid = d._visid
+ left join e on a._visid = e._visid
+
+NOTE: please check Browser and operating_system
+-----------------------------------------------------------------------------------------------------
+ sms summary Report:
+
+Campaign ID,	Campaign Name,	Sent Date,	Total Published	Delivered,	Delivery Rate	Submitted,	Submitted Rate,
+Undelivered,	Undelivered Rate,	Not Sent	,Total Clicks,	Total Click Rate,	Unique Clicks	,Unique Click Rate,	
+Unique Conversions,	Total Revenue,	Event Names	,Segments Names	,Tag Name.
+      
+      
+      
+      sms
+
+with
+ss as ( select cp_id,tpid,tp,cp_type,count(distinct _visid) as c,min(_epoch at time zone 'UTC+5:30') as sent_date
+  from gmg_baf6d165._http_req_sent where (_epoch at time zone 'UTC+5:30')between '2021-04-01' and '2021-04-13'  group by 1,2,3,4),
+  
+ sd as (
+    select cp_id,tpid,tp,cp_type,count(distinct _visid),min(_epoch at time zone 'UTC+5:30') as sent_date
+  from gmg_baf6d165.sms_dlr_tracker where reason='DELIVRD' and (_epoch at time zone 'UTC+5:30')
+  between '2021-04-01'and '2021-04-13'  group by 1,2,3,4),
+  
+sb as( select cp_id,tpid,tp,cp_type,count(distinct _visid),min(_epoch at time zone 'UTC+5:30') as sent_date
+  from gmg_baf6d165.sms_dlr_tracker where reason != 'DELIVRD' and (_epoch at time zone 'UTC+5:30')between '2021-04-01' and '2021-04-13'
+      group by 1,2,3,4
+     ),
+ sc as (
+  select cp_id,tpid,tp,cp_type,count(distinct _visid) as u,count(_visid) as c,min(_epoch at time zone 'UTC+5:30') as sent_date
+  from gmg_baf6d165._sms_click where (_epoch at time zone 'UTC+5:30')between '2021-04-01' and '2021-04-13'  group by 1,2,3,4
+)
+       
+select
+ss.cp_id as campaignt_name    
+,ss.cp_type as campaignt_type
+,sc.tpid as template_id
+,sd.tp as touchpoint
+,sd.count as sms_dlr_tracker            
+,sb.count as sms_bounce
+,ss.c as sms_sent  
+,sc.c as sms_click
+
+,sd.count as sms_delivered
+,round((sd.count::numeric/(case when ss.c=0 then 1 else sc.c end)*100),2) as delivery_percent
+,sb.count as sms_failed
+,round((sb.count::numeric/(case when sc.c=0 then 1 else sc.c end)*100),2) as failed_percent
+,sc.c as sms_clicked
+,round((sc.c::numeric/(case when sd.count=0 then 1 else sd.count end)*100),2) as total_click_percent
+,sc.u as unique_sms_clicked
+,round((sc.u::numeric/(case when sd.count=0 then 1 else sd.count end)*100),2) as unique_click_percent
+ 
+ 
+  from ss   
+      
+      left join sd on ss.cp_id= sd.cp_id and ss.tpid= sd.tpid and ss.tp = sd.tp and ss.cp_type=sd.cp_type
+      left join sb on ss.cp_id= sb.cp_id and ss.tpid= sb.tpid and ss.tp = sb.tp and ss.cp_type=sb.cp_type
+      left join sc on ss.cp_id= sc.cp_id and ss.tpid= sc.tpid and ss.tp = sc.tp and ss.cp_type=sc.cp_type
+      
+      [Note :camp as (select 'ad' as cp_type,cid,cname from adhoccamps union all select 'c' as cp_type,cid,cname from realcamps)
+      select camp.cname    
+     left join camp on ss.cp_id = camp.cid and ss.cp_type = camp.cp_type]
+      
+      
+      -------------------------------------------------------------------------------------------------------
+      user level sms_click:
+
+SrNo	Primary Key	Email ID	Mobile	links	FirstClick	LatestClick	Total clicks
+select * from gmg_baf6d165._sms_click limit 10
+
+with  a as (
+  select _visid,min(_epoch at time zone 'UTC+5:30'),max(_epoch at time zone 'UTC+5:30'),count(*)
+from gmg_baf6d165._sms_click where  (_epoch at time zone 'UTC+5:30')  between' 2021-03-01' and '2021-03-31' group by 1),
+b as (
+  select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'mobile_number')a where rnk=1),
+c as (select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'email')a where rnk=1)
+ 
+   
+  select a.min as firstClick, a.max as latestClick,a.count as TotalClick,a._visid as Primary_key,
+ b.property_s AS Mobile_number, 
+ c.property_s as Email
+ 
+ 
+ 
+ from a left join b on 
+ a._visid= b._visid
+ left join c on a._visid = c._visid
+
+ limit 10;
+
+
+note: please check 'link'
+____________________________________________________________________________________________________________________________
+sms_sent
+SrNo	Broadcast Date	Primary Key 	Email ID	Mobile	Details
+
+with  a as (
+  select _visid  ,max(_epoch at time zone 'UTC+5:30'),count(*)
+from gmg_baf6d165._http_req_sent where  (_epoch at time zone 'UTC+5:30')  between' 2021-03-01' and '2021-03-31' group by 1),
+b as (
+  select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'mobile_number')a where rnk=1),
+c as (select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'email')a where rnk=1),
+ d as (select _visid,property_s from gmg_baf6d165.vw_visitor_properties_uniq where property_name = 'details' group by 1,2 )
+
+
+ select a._visid as Primary_key,a.max as Broadcast_date,
+ b.property_s as mobile_number,
+ c.property_s as Email,
+ d.property_s as details
+ 
+ from a left join b on 
+ a._visid= b._visid
+ left join c on a._visid = c._visid
+ left join d on a._visid = d._visid
+--------------------------------------------------------------------------------------------------------------
+sms_delivery report 
+
+Campaign ID	Campaign name	Mobile number	Primary Key	Message	Published date	Delivered time	Status	Remark	Operator	Circle
+ 
+
+with a as( select 
+  cp_id,cp_type,_visid,max(_epoch at time zone 'UTC+5:30'),min(_epoch at time zone 'UTC+5:30'),status,operator,cricle,message
+          from gmg_baf6d165.sms_dlr_tracker where reason = 'delivrd'and ((_epoch at time zone 'UTC+5:30')between '2021-03-01' and '2021-03-31'),
+
+b as (
+  select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'mobile_number')a where rnk=1),
+c as (
+  select _visid,property_s from gmg_baf6d165.vw_visitor_properties_uniq where property_name = 'remark' group by 1,2 ),
+camp as (
+    select 'ad' as cp_type,cid,cname from adhoccamps union all select 'c' as cp_type,cid,cname from realcamps)
+          
+          select a.cp_id as campaign_id,a.cp_type as campaign_name,a._visid as primary_key,a.max as delivered_time, a.min as published,
+a.status as status,a.operator as "operator",          
+b.property_s as moblie_number,
+c.property-s as remark
+          
+    from a left join b on  a._visid = b._visid 
+          left join c on  a._visid = c._visid
+        left join camp on a.cp_id=camp.cid and a.cp_type=camp.cp_type
+        --------------------------------------------------
+        user level sms_click:
+
+SrNo	Primary Key	Email ID	Mobile	links	FirstClick	LatestClick	Total clicks
+select * from gmg_baf6d165._sms_click limit 10
+
+with  a as (
+  select _visid,min(_epoch at time zone 'UTC+5:30'),max(_epoch at time zone 'UTC+5:30'),count(*)
+from gmg_baf6d165._sms_click where  (_epoch at time zone 'UTC+5:30')  between' 2021-03-01' and '2021-03-31' group by 1),
+b as (
+  select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'mobile_number')a where rnk=1),
+c as (select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'email')a where rnk=1)
+ 
+   
+  select a.min as firstClick, a.max as latestClick,a.count as TotalClick,a._visid as Primary_key,
+ b.property_s AS Mobile_number, 
+ c.property_s as Email
+ 
+ 
+ 
+ from a left join b on 
+ a._visid= b._visid
+ left join c on a._visid = c._visid
+
+ limit 10;
+
+
+note: please check 'link'
+____________________________________________________________________________________________________________________________
+sms_sent
+SrNo	Broadcast Date	Primary Key 	Email ID	Mobile	Details
+
+with  a as (
+  select _visid  ,max(_epoch at time zone 'UTC+5:30'),count(*)
+from gmg_baf6d165._http_req_sent where  (_epoch at time zone 'UTC+5:30')  between' 2021-03-01' and '2021-03-31' group by 1),
+b as (
+  select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'mobile_number')a where rnk=1),
+c as (select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'email')a where rnk=1),
+ d as (select _visid,property_s from gmg_baf6d165.vw_visitor_properties_uniq where property_name = 'details' group by 1,2 )
+
+
+ select a._visid as Primary_key,a.max as Broadcast_date,
+ b.property_s as mobile_number,
+ c.property_s as Email,
+ d.property_s as details
+ 
+ from a left join b on 
+ a._visid= b._visid
+ left join c on a._visid = c._visid
+ left join d on a._visid = d._visid
+--------------------------------------------------------------------------------------------------------------
+user level sms_click:
+
+SrNo	Primary Key	Email ID	Mobile	links	FirstClick	LatestClick	Total clicks
+select * from gmg_baf6d165._sms_click limit 10
+
+with  a as (
+  select _visid,min(_epoch at time zone 'UTC+5:30'),max(_epoch at time zone 'UTC+5:30'),count(*)
+from gmg_baf6d165._sms_click where  (_epoch at time zone 'UTC+5:30')  between' 2021-03-01' and '2021-03-31' group by 1),
+b as (
+  select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'mobile_number')a where rnk=1),
+c as (select _visid,property_s from (select  _visid,property_s,row_number() over (partition by _visid order by _epoch desc) as rnk
+             from gmg_baf6d165.visitor_properties where property_name = 'email')a where rnk=1)
+ 
+   
+  select a.min as firstClick, a.max as latestClick,a.count as TotalClick,a._visid as Primary_key,
+ b.property_s AS Mobile_number, 
+ c.property_s as Email
+ 
+ 
+ 
+ from a left join b on 
+ a._visid= b._visid
+ left join c on a._visid = c._visid
+
+ limit 10;
+
+
+note: please check 'link'
+     
