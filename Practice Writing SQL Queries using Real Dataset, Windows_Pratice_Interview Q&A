@@ -1,0 +1,918 @@
+-- Query 1:
+
+Write a SQL query to fetch all the duplicate records from a table.
+
+--Tables Structure:
+
+drop table users;
+create table users
+(
+user_id int primary key,
+user_name varchar(30) not null,
+email varchar(50));
+
+insert into users values
+(1, 'Sumit', 'sumit@gmail.com'),
+(2, 'Reshma', 'reshma@gmail.com'),
+(3, 'Farhana', 'farhana@gmail.com'),
+(4, 'Robin', 'robin@gmail.com'),
+(5, 'Robin', 'robin@gmail.com');
+
+select * from users;
+
+-- Solution 1:
+
+-- Replace ctid with rowid for Oracle, MySQL and Microsoft SQLServer
+select *
+from users u
+where u.ctid not in (
+select min(ctid) as ctid
+from users
+group by user_name
+order by ctid);
+
+
+-- Solution 2: Using window function.
+
+select user_id, user_name, email
+from (
+select *,
+row_number() over (partition by user_name order by user_id) as rn
+from users u
+order by user_id) x
+where x.rn <> 1;
+
+
+
+- Query 2:
+
+Write a SQL query to fetch the second last record from a employee table.
+
+--Tables Structure:
+
+drop table employee;
+create table employee
+( emp_ID int primary key
+, emp_NAME varchar(50) not null
+, DEPT_NAME varchar(50)
+, SALARY int);
+
+insert into employee values(101, 'Mohan', 'Admin', 4000);
+insert into employee values(102, 'Rajkumar', 'HR', 3000);
+insert into employee values(103, 'Akbar', 'IT', 4000);
+insert into employee values(104, 'Dorvin', 'Finance', 6500);
+insert into employee values(105, 'Rohit', 'HR', 3000);
+insert into employee values(106, 'Rajesh',  'Finance', 5000);
+insert into employee values(107, 'Preet', 'HR', 7000);
+insert into employee values(108, 'Maryam', 'Admin', 4000);
+insert into employee values(109, 'Sanjay', 'IT', 6500);
+insert into employee values(110, 'Vasudha', 'IT', 7000);
+insert into employee values(111, 'Melinda', 'IT', 8000);
+insert into employee values(112, 'Komal', 'IT', 10000);
+insert into employee values(113, 'Gautham', 'Admin', 2000);
+insert into employee values(114, 'Manisha', 'HR', 3000);
+insert into employee values(115, 'Chandni', 'IT', 4500);
+insert into employee values(116, 'Satya', 'Finance', 6500);
+insert into employee values(117, 'Adarsh', 'HR', 3500);
+insert into employee values(118, 'Tejaswi', 'Finance', 5500);
+insert into employee values(119, 'Cory', 'HR', 8000);
+insert into employee values(120, 'Monica', 'Admin', 5000);
+insert into employee values(121, 'Rosalin', 'IT', 6000);
+insert into employee values(122, 'Ibrahim', 'IT', 8000);
+insert into employee values(123, 'Vikram', 'IT', 8000);
+insert into employee values(124, 'Dheeraj', 'IT', 11000);
+
+select * from employee;
+
+-- Solution:
+select emp_id, emp_name, dept_name, salary
+from (
+select *,
+row_number() over (order by emp_id desc) as rn
+from employee e) x
+where x.rn = 2;
+
+
+-- Query 3:
+
+Write a SQL query to display only the details of employees who either earn the highest salary
+or the lowest salary in each department from the employee table.
+
+--Tables Structure:
+
+drop table employee;
+create table employee
+( emp_ID int primary key
+, emp_NAME varchar(50) not null
+, DEPT_NAME varchar(50)
+, SALARY int);
+
+insert into employee values(101, 'Mohan', 'Admin', 4000);
+insert into employee values(102, 'Rajkumar', 'HR', 3000);
+insert into employee values(103, 'Akbar', 'IT', 4000);
+insert into employee values(104, 'Dorvin', 'Finance', 6500);
+insert into employee values(105, 'Rohit', 'HR', 3000);
+insert into employee values(106, 'Rajesh',  'Finance', 5000);
+insert into employee values(107, 'Preet', 'HR', 7000);
+insert into employee values(108, 'Maryam', 'Admin', 4000);
+insert into employee values(109, 'Sanjay', 'IT', 6500);
+insert into employee values(110, 'Vasudha', 'IT', 7000);
+insert into employee values(111, 'Melinda', 'IT', 8000);
+insert into employee values(112, 'Komal', 'IT', 10000);
+insert into employee values(113, 'Gautham', 'Admin', 2000);
+insert into employee values(114, 'Manisha', 'HR', 3000);
+insert into employee values(115, 'Chandni', 'IT', 4500);
+insert into employee values(116, 'Satya', 'Finance', 6500);
+insert into employee values(117, 'Adarsh', 'HR', 3500);
+insert into employee values(118, 'Tejaswi', 'Finance', 5500);
+insert into employee values(119, 'Cory', 'HR', 8000);
+insert into employee values(120, 'Monica', 'Admin', 5000);
+insert into employee values(121, 'Rosalin', 'IT', 6000);
+insert into employee values(122, 'Ibrahim', 'IT', 8000);
+insert into employee values(123, 'Vikram', 'IT', 8000);
+insert into employee values(124, 'Dheeraj', 'IT', 11000);
+
+select * from employee;
+
+-- Solution:
+select x.*
+from employee e
+join (select *,
+max(salary) over (partition by dept_name) as max_salary,
+min(salary) over (partition by dept_name) as min_salary
+from employee) x
+on e.emp_id = x.emp_id
+and (e.salary = x.max_salary or e.salary = x.min_salary)
+order by x.dept_name, x.salary;
+
+
+-- Query 4:
+
+From the doctors table, fetch the details of doctors who work in the same hospital but in different speciality.
+
+--Table Structure:
+
+drop table doctors;
+create table doctors
+(
+id int primary key,
+name varchar(50) not null,
+speciality varchar(100),
+hospital varchar(50),
+city varchar(50),
+consultation_fee int
+);
+
+insert into doctors values
+(1, 'Dr. Shashank', 'Ayurveda', 'Apollo Hospital', 'Bangalore', 2500),
+(2, 'Dr. Abdul', 'Homeopathy', 'Fortis Hospital', 'Bangalore', 2000),
+(3, 'Dr. Shwetha', 'Homeopathy', 'KMC Hospital', 'Manipal', 1000),
+(4, 'Dr. Murphy', 'Dermatology', 'KMC Hospital', 'Manipal', 1500),
+(5, 'Dr. Farhana', 'Physician', 'Gleneagles Hospital', 'Bangalore', 1700),
+(6, 'Dr. Maryam', 'Physician', 'Gleneagles Hospital', 'Bangalore', 1500);
+
+select * from doctors;
+
+--Solution:
+
+select d1.name, d1.speciality,d1.hospital
+from doctors d1
+join doctors d2
+on d1.hospital = d2.hospital and d1.speciality <> d2.speciality
+and d1.id <> d2.id;
+
+
+
+--Sub Question:
+
+Now find the doctors who work in same hospital irrespective of their speciality.
+
+--Solution:
+
+select d1.name, d1.speciality,d1.hospital
+from doctors d1
+join doctors d2
+on d1.hospital = d2.hospital
+and d1.id <> d2.id;
+
+
+-- Query 5:
+
+From the login_details table, fetch the users who logged in consecutively 3 or more times.
+
+--Table Structure:
+
+drop table login_details;
+create table login_details(
+login_id int primary key,
+user_name varchar(50) not null,
+login_date date);
+
+delete from login_details;
+insert into login_details values
+(101, 'Michael', current_date),
+(102, 'James', current_date),
+(103, 'Stewart', current_date+1),
+(104, 'Stewart', current_date+1),
+(105, 'Stewart', current_date+1),
+(106, 'Michael', current_date+2),
+(107, 'Michael', current_date+2),
+(108, 'Stewart', current_date+3),
+(109, 'Stewart', current_date+3),
+(110, 'James', current_date+4),
+(111, 'James', current_date+4),
+(112, 'James', current_date+5),
+(113, 'James', current_date+6);
+
+select * from login_details;
+
+--Solution:
+
+select distinct repeated_names
+from (
+select *,
+case when user_name = lead(user_name) over(order by login_id)
+and  user_name = lead(user_name,2) over(order by login_id)
+then user_name else null end as repeated_names
+from login_details) x
+where x.repeated_names is not null;
+
+
+-- Query 6:
+
+From the students table, write a SQL query to interchange the adjacent student names.
+
+Note: If there are no adjacent student then the student name should stay the same.
+
+--Table Structure:
+
+drop table students;
+create table students
+(
+id int primary key,
+student_name varchar(50) not null
+);
+insert into students values
+(1, 'James'),
+(2, 'Michael'),
+(3, 'George'),
+(4, 'Stewart'),
+(5, 'Robin');
+
+select * from students;
+
+--Solution:
+
+select id,student_name,
+case when id%2 <> 0 then lead(student_name,1,student_name) over(order by id)
+when id%2 = 0 then lag(student_name) over(order by id) end as new_student_name
+from students;
+
+
+-- Query 7:
+
+From the weather table, fetch all the records when London had extremely cold temperature for 3 consecutive days or more.
+
+Note: Weather is considered to be extremely cold then its temperature is less than zero.
+
+--Table Structure:
+
+drop table weather;
+create table weather
+(
+id int,
+city varchar(50),
+temperature int,
+day date
+);
+delete from weather;
+insert into weather values
+(1, 'London', -1, to_date('2021-01-01','yyyy-mm-dd')),
+(2, 'London', -2, to_date('2021-01-02','yyyy-mm-dd')),
+(3, 'London', 4, to_date('2021-01-03','yyyy-mm-dd')),
+(4, 'London', 1, to_date('2021-01-04','yyyy-mm-dd')),
+(5, 'London', -2, to_date('2021-01-05','yyyy-mm-dd')),
+(6, 'London', -5, to_date('2021-01-06','yyyy-mm-dd')),
+(7, 'London', -7, to_date('2021-01-07','yyyy-mm-dd')),
+(8, 'London', 5, to_date('2021-01-08','yyyy-mm-dd'));
+
+select * from weather;
+
+--Solution:
+
+select id, city, temperature, day
+from (
+    select *,
+        case when temperature < 0
+              and lead(temperature) over(order by day) < 0
+              and lead(temperature,2) over(order by day) < 0
+        then 'Y'
+        when temperature < 0
+              and lead(temperature) over(order by day) < 0
+              and lag(temperature) over(order by day) < 0
+        then 'Y'
+        when temperature < 0
+              and lag(temperature) over(order by day) < 0
+              and lag(temperature,2) over(order by day) < 0
+        then 'Y'
+        end as flag
+    from weather) x
+where x.flag = 'Y';
+
+
+-- Query 8:
+
+From the following 3 tables (event_category, physician_speciality, patient_treatment),
+write a SQL query to get the histogram of specialities of the unique physicians
+who have done the procedures but never did prescribe anything.
+
+--Table Structure:
+
+drop table event_category;
+create table event_category
+(
+  event_name varchar(50),
+  category varchar(100)
+);
+
+drop table physician_speciality;
+create table physician_speciality
+(
+  physician_id int,
+  speciality varchar(50)
+);
+
+drop table patient_treatment;
+create table patient_treatment
+(
+  patient_id int,
+  event_name varchar(50),
+  physician_id int
+);
+
+
+insert into event_category values ('Chemotherapy','Procedure');
+insert into event_category values ('Radiation','Procedure');
+insert into event_category values ('Immunosuppressants','Prescription');
+insert into event_category values ('BTKI','Prescription');
+insert into event_category values ('Biopsy','Test');
+
+
+insert into physician_speciality values (1000,'Radiologist');
+insert into physician_speciality values (2000,'Oncologist');
+insert into physician_speciality values (3000,'Hermatologist');
+insert into physician_speciality values (4000,'Oncologist');
+insert into physician_speciality values (5000,'Pathologist');
+insert into physician_speciality values (6000,'Oncologist');
+
+
+insert into patient_treatment values (1,'Radiation', 1000);
+insert into patient_treatment values (2,'Chemotherapy', 2000);
+insert into patient_treatment values (1,'Biopsy', 1000);
+insert into patient_treatment values (3,'Immunosuppressants', 2000);
+insert into patient_treatment values (4,'BTKI', 3000);
+insert into patient_treatment values (5,'Radiation', 4000);
+insert into patient_treatment values (4,'Chemotherapy', 2000);
+insert into patient_treatment values (1,'Biopsy', 5000);
+insert into patient_treatment values (6,'Chemotherapy', 6000);
+
+
+select * from patient_treatment;
+select * from event_category;
+select * from physician_speciality;
+
+
+-- Solution:
+select ps.speciality, count(1) as speciality_count
+from patient_treatment pt
+join event_category ec on ec.event_name = pt.event_name
+join physician_speciality ps on ps.physician_id = pt.physician_id
+where ec.category = 'Procedure'
+and pt.physician_id not in (select pt2.physician_id
+							from patient_treatment pt2
+							join event_category ec on ec.event_name = pt2.event_name
+							where ec.category in ('Prescription'))
+group by ps.speciality;
+
+
+-- Query 9:
+
+Find the top 2 accounts with the maximum number of unique patients on a monthly basis.
+
+Note: Prefer the account if with the least value in case of same number of unique patients
+
+--Table Structure:
+
+drop table patient_logs;
+create table patient_logs
+(
+  account_id int,
+  date date,
+  patient_id int
+);
+
+insert into patient_logs values (1, to_date('02-01-2020','dd-mm-yyyy'), 100);
+insert into patient_logs values (1, to_date('27-01-2020','dd-mm-yyyy'), 200);
+insert into patient_logs values (2, to_date('01-01-2020','dd-mm-yyyy'), 300);
+insert into patient_logs values (2, to_date('21-01-2020','dd-mm-yyyy'), 400);
+insert into patient_logs values (2, to_date('21-01-2020','dd-mm-yyyy'), 300);
+insert into patient_logs values (2, to_date('01-01-2020','dd-mm-yyyy'), 500);
+insert into patient_logs values (3, to_date('20-01-2020','dd-mm-yyyy'), 400);
+insert into patient_logs values (1, to_date('04-03-2020','dd-mm-yyyy'), 500);
+insert into patient_logs values (3, to_date('20-01-2020','dd-mm-yyyy'), 450);
+
+select * from patient_logs;
+
+
+-- Solution:
+select a.month, a.account_id, a.no_of_unique_patients
+from (
+		select x.month, x.account_id, no_of_unique_patients,
+			row_number() over (partition by x.month order by x.no_of_unique_patients desc) as rn
+		from (
+				select pl.month, pl.account_id, count(1) as no_of_unique_patients
+				from (select distinct to_char(date,'month') as month, account_id, patient_id
+						from patient_logs) pl
+				group by pl.month, pl.account_id) x
+     ) a
+where a.rn < 3;
+
+
+
+----------------------------------------------------------------------------------------------
+List of all these 20 queries mentioned below:
+1.How many olympics games have been held?
+2.List down all Olympics games held so far.
+3.Mention the total no of nations who participated in each olympics game?
+4.Which year saw the highest and lowest no of countries participating in olympics?
+5.Which nation has participated in all of the olympic games?
+6.Identify the sport which was played in all summer olympics.
+7.Which Sports were just played only once in the olympics?
+8.Fetch the total no of sports played in each olympic games.
+9.Fetch details of the oldest athletes to win a gold medal.
+10.Find the Ratio of male and female athletes participated in all olympic games.
+11.Fetch the top 5 athletes who have won the most gold medals.
+12.Fetch the top 5 athletes who have won the most medals (gold/silver/bronze).
+13.Fetch the top 5 most successful countries in olympics. Success is defined by no of medals won.
+14.List down total gold, silver and broze medals won by each country.
+15.List down total gold, silver and broze medals won by each country corresponding to each olympic games.
+16.Identify which country won the most gold, most silver and most bronze medals in each olympic games.
+17.Identify which country won the most gold, most silver, most bronze medals and the most medals in each olympic games.
+18.Which countries have never won gold medal but have won silver/bronze medals?
+19.In which Sport/event, India has won highest medals.
+20.Break down all olympic games where india won medal for Hockey and how many medals in each olympic games.
+
+----------------------------------------------------------------------------------------------------
+https://techtfq.com/blog/practice-writing-sql-queries-using-real-dataset
+
+----------------------------------------------------------------------
+1. How many olympics games have been held?
+Problem Statement: Write a SQL query to find the total no of Olympic Games held as per the dataset.
+SELECT  COUNT(DISTINCT GAMES) AS TOTAL_NU_GAMES FROM olympics_history;
+-----------------------------------------------------------------------------
+2. List down all Olympics games held so far.
+Problem Statement: Write a SQL query to list down all the Olympic Games held so far.
+
+
+SELECT distinct Year,SEASON,CITY FROM olympics_history WHERE SEASON = 'SUMMER' order by YEAR ASC ;
+select distinct oh.year,oh.season,oh.city
+    from olympics_history oh
+    order by year;
+
+----------------------------------------------------------------------------------
+3. Mention the total no of nations who participated in each olympics game?
+
+Problem Statement: SQL query to fetch total no of countries participated in each olympic games.
+ 
+ with all_countries as
+        (select games, nr.region
+        from olympics_history oh
+        join olympics_history_noc_regions nr ON nr.noc = oh.noc
+        group by games, nr.region)
+    select games, count(1) as total_countries
+    from all_countries
+    group by games
+    order by games;
+
+SELECT OREG.REGION,GAMES,YEAR,COUNT(1) AS TOTAL_COUNTRIES  
+FROM olympics_history OH
+INNER JOIN olympics_history_noc_regions OREG
+ON OH.NOC = OREG.NOC
+GROUP BY 2 ORDER BY 2 ASC;
+
+WITH A1 AS(
+SELECT OREG.REGION,GAMES,YEAR,COUNT(1) AS TOTAL_COUNTRIES  
+FROM olympics_history OH
+INNER JOIN olympics_history_noc_regions OREG
+ON OH.NOC = OREG.NOC
+GROUP BY 2 ORDER BY 2 ASC)
+SELECT GAMES,COUNT(1) FROM A1 GROUP BY 1 order by 1;
+------------------------------------------------------------------------------------------------
+4. Which year saw the highest and lowest no of countries participating in olympics
+
+Problem Statement: Write a SQL query to return the Olympic Games which had the highest participating countries and the lowest participating countries.
+
+with all_countries as
+              (select games, nr.region
+              from olympics_history oh
+              join olympics_history_noc_regions nr ON nr.noc=oh.noc
+              group by games, nr.region),
+          tot_countries as
+              (select games, count(1) as total_countries
+              from all_countries
+              group by games)
+      select distinct
+      concat(first_value(games) over(order by total_countries)
+      , ' - '
+      , first_value(total_countries) over(order by total_countries)) as Lowest_Countries,
+      concat(first_value(games) over(order by total_countries desc)
+      , ' - '
+      , first_value(total_countries) over(order by total_countries desc)) as Highest_Countries
+      from tot_countries
+      order by 1;
+-------------------------------------------------------------------------------
+5. Which nation has participated in all of the olympic games
+
+Problem Statement: SQL query to return the list of countries who have been part of every Olympics games.
+
+
+
+WITH TOT_GAMES AS 
+( SELECT COUNT(GAMES)AS TOTAL_GAMES FROM OLYMPICS_HISTORY),
+COUNTRIES AS
+( SELECT GAMES,A2.REGION AS COUNTRY FROM OLYMPICS_HISTORY A1 JOIN OLYMPICS_HISTORY_NOC_REGIONS A2
+ON A1.NOC = A2.NOC
+GROUP BY 1,2),
+COUNTRIES_PARTICIPATED AS
+(SELECT COUNTRY,COUNT(1)AS participated FROM COUNTRIES GROUP BY 1)
+SELECT CP.* FROM COUNTRIES_PARTICIPATED CP 
+JOIN TOT_GAMES TG ON TG.TOTAL_GAMES = CP.participated
+ORDER BY 1;
+
+-----------------------------------------------------------------------------------------------------
+
+6. Identify the sport which was played in all summer olympics.
+
+Problem Statement: SQL query to fetch the list of all sports which have been part of every olympics.
+
+  with t1 as
+          	(select count(distinct games) as total_games
+          	from olympics_history where season = 'Summer'),
+          t2 as
+          	(select distinct games, sport
+          	from olympics_history where season = 'Summer'),
+          t3 as
+          	(select sport, count(1) as no_of_games
+          	from t2
+          	group by sport)
+      select *
+      from t3
+      join t1 on t1.total_games = t3.no_of_games;
+----------------------------------------------------------------------------------------------------
+
+7. Which Sports were just played only once in the olympics.
+
+Problem Statement: Using SQL query, Identify the sport which were just played once in all of olympics.
+with t1 as
+            (select distinct games, sport
+            from olympics_history),
+          t2 as
+            (select sport, count(1) as no_of_games
+            from t1
+            group by sport)
+      select t2.*, t1.games
+      from t2
+      join t1 on t1.sport = t2.sport
+      where t2.no_of_games = 1
+      order by t1.sport;
+-----------------------------------------------------------------------------------------------------
+8. Fetch the total no of sports played in each olympic games.
+
+Problem Statement: Write SQL query to fetch the total no of sports played in each olympics.
+
+WITH  T1 AS (
+SELECT DISTINCT GAMES , SPORT FROM OLYMPICS_HISTORY ),
+T2 AS (
+SELECT GAMES,COUNT(1) AS no_of_sports  FROM T1 GROUP BY 1)
+SELECT * FROM  T2
+ORDER  BY NO_OF_SPORTS DESC;
+---------------------------------------------------------------------------------------------------
+9. Fetch oldest athletes to win a gold medal
+
+Problem Statement: SQL Query to fetch the details of the oldest athletes to win a gold medal at the olympics.
+
+
+  with temp as
+            (select name,sex,cast(case when age = 'NA' then '0' else age end as int) as age
+              ,team,games,city,sport, event, medal
+            from olympics_history),
+        ranking as
+            (select *, rank() over(order by age desc) as rnk
+            from temp
+            where medal='Gold')
+    select *
+    from ranking
+    where rnk = 1;
+-------------------------------------------------------------------------------------------------
+10. Find the Ratio of male and female athletes participated in all olympic games.
+
+Problem Statement: Write a SQL query to get the ratio of male and female participants
+10. Find the Ratio of male and female athletes participated in all olympic games.
+    with t1 as
+        	(select sex, count(1) as cnt
+        	from olympics_history
+        	group by sex),
+        t2 as
+        	(select *, row_number() over(order by cnt) as rn
+        	 from t1),
+        min_cnt as
+        	(select cnt from t2	where rn = 1),
+        max_cnt as
+        	(select cnt from t2	where rn = 2)
+    select concat('1 : ', round(max_cnt.cnt::decimal/min_cnt.cnt, 2)) as ratio
+    from min_cnt, max_cnt;
+--------------------------------------------------------------------------------------------
+11. Fetch the top 5 athletes who have won the most gold medals.
+
+Problem Statement: SQL query to fetch the top 5 athletes who have won the most gold medals.
+
+  with t1 as
+            (select name, team, count(1) as total_gold_medals
+            from olympics_history
+            where medal = 'Gold'
+            group by name, team
+            order by total_gold_medals desc),
+        t2 as
+            (select *, dense_rank() over (order by total_gold_medals desc) as rnk
+            from t1)
+    select name, team, total_gold_medals
+    from t2
+    where rnk <= 5;
+---------------------------------------------------------------------------------------------
+12. Fetch the top 5 athletes who have won the most medals (gold/silver/bronze).
+
+Problem Statement: SQL Query to fetch the top 5 athletes who have won the most medals (Medals include gold, silver and bronze).
+
+with t1 as
+            (select name, team, count(1) as total_medals
+            from olympics_history
+            where medal in ('Gold', 'Silver', 'Bronze')
+            group by name, team
+            order by total_medals desc),
+        t2 as
+            (select *, dense_rank() over (order by total_medals desc) as rnk
+            from t1)
+    select name, team, total_medals
+    from t2
+    where rnk <= 5;
+---------------------------------------------------------------------------------------------
+13. Fetch the top 5 most successful countries in olympics. Success is defined by no of medals won.
+
+Problem Statement: Write a SQL query to fetch the top 5 most successful countries in olympics. (Success is defined by no of medals won).
+with t1 as
+            (select nr.region, count(1) as total_medals
+            from olympics_history oh
+            join olympics_history_noc_regions nr on nr.noc = oh.noc
+            where medal <> 'NA'
+            group by nr.region
+            order by total_medals desc),
+        t2 as
+            (select *, dense_rank() over(order by total_medals desc) as rnk
+            from t1)
+    select *
+    from t2
+    where rnk <= 5;
+----------------------------------------------------------------------------------------
+14. List down total gold, silver and bronze medals won by each country.
+
+Problem Statement: Write a SQL query to list down the  total gold, silver and bronze medals won by each country.
+
+
+-- PIVOT
+In Postgresql, we can use crosstab function to create pivot table.
+crosstab function is part of a PostgreSQL extension called tablefunc.
+To call the crosstab function, you must first enable the tablefunc extension by executing the following SQL command:
+
+CREATE EXTENSION TABLEFUNC;
+
+14. List down total gold, silver and broze medals won by each country.
+
+    SELECT country
+    	, coalesce(gold, 0) as gold
+    	, coalesce(silver, 0) as silver
+    	, coalesce(bronze, 0) as bronze
+    FROM CROSSTAB('SELECT nr.region as country
+    			, medal
+    			, count(1) as total_medals
+    			FROM olympics_history oh
+    			JOIN olympics_history_noc_regions nr ON nr.noc = oh.noc
+    			where medal <> ''NA''
+    			GROUP BY nr.region,medal
+    			order BY nr.region,medal',
+            'values (''Bronze''), (''Gold''), (''Silver'')')
+    AS FINAL_RESULT(country varchar, bronze bigint, gold bigint, silver bigint)
+    order by gold desc, silver desc, bronze desc;
+
+
+------------------------------------------------------------------------------------------------------------------
+15. List down total gold, silver and bronze medals won by each country corresponding to each olympic games.
+
+Problem Statement: Write a SQL query to list down the  total gold, silver and bronze medals won by each country corresponding to each olympic games.
+
+
+-- PIVOT
+In Postgresql, we can use crosstab function to create pivot table.
+crosstab function is part of a PostgreSQL extension called tablefunc.
+To call the crosstab function, you must first enable the tablefunc extension by executing the following SQL command:
+
+CREATE EXTENSION TABLEFUNC;
+
+15. List down total gold, silver and broze medals won by each country corresponding to each olympic games.
+
+    SELECT substring(games,1,position(' - ' in games) - 1) as games
+        , substring(games,position(' - ' in games) + 3) as country
+        , coalesce(gold, 0) as gold
+        , coalesce(silver, 0) as silver
+        , coalesce(bronze, 0) as bronze
+    FROM CROSSTAB('SELECT concat(games, '' - '', nr.region) as games
+                , medal
+                , count(1) as total_medals
+                FROM olympics_history oh
+                JOIN olympics_history_noc_regions nr ON nr.noc = oh.noc
+                where medal <> ''NA''
+                GROUP BY games,nr.region,medal
+                order BY games,medal',
+            'values (''Bronze''), (''Gold''), (''Silver'')')
+    AS FINAL_RESULT(games text, bronze bigint, gold bigint, silver bigint);
+
+
+--------------------------------------------------------------------------------------------------------------------------
+16. Identify which country won the most gold, most silver and most bronze medals in each olympic games.
+
+Problem Statement: Write SQL query to display for each Olympic Games, which country won the highest gold, silver and bronze medals.
+
+
+
+-- PIVOT
+In Postgresql, we can use crosstab function to create pivot table.
+crosstab function is part of a PostgreSQL extension called tablefunc.
+To call the crosstab function, you must first enable the tablefunc extension by executing the following SQL command:
+
+CREATE EXTENSION TABLEFUNC;
+
+16. Identify which country won the most gold, most silver and most bronze medals in each olympic games.
+
+    WITH temp as
+    	(SELECT substring(games, 1, position(' - ' in games) - 1) as games
+    	 	, substring(games, position(' - ' in games) + 3) as country
+            , coalesce(gold, 0) as gold
+            , coalesce(silver, 0) as silver
+            , coalesce(bronze, 0) as bronze
+    	FROM CROSSTAB('SELECT concat(games, '' - '', nr.region) as games
+    					, medal
+    				  	, count(1) as total_medals
+    				  FROM olympics_history oh
+    				  JOIN olympics_history_noc_regions nr ON nr.noc = oh.noc
+    				  where medal <> ''NA''
+    				  GROUP BY games,nr.region,medal
+    				  order BY games,medal',
+                  'values (''Bronze''), (''Gold''), (''Silver'')')
+    			   AS FINAL_RESULT(games text, bronze bigint, gold bigint, silver bigint))
+    select distinct games
+    	, concat(first_value(country) over(partition by games order by gold desc)
+    			, ' - '
+    			, first_value(gold) over(partition by games order by gold desc)) as Max_Gold
+    	, concat(first_value(country) over(partition by games order by silver desc)
+    			, ' - '
+    			, first_value(silver) over(partition by games order by silver desc)) as Max_Silver
+    	, concat(first_value(country) over(partition by games order by bronze desc)
+    			, ' - '
+    			, first_value(bronze) over(partition by games order by bronze desc)) as Max_Bronze
+    from temp
+    order by games;
+-----------------------------------------------------------------------------------------------------------------
+17. Identify which country won the most gold, most silver, most bronze medals and the most medals in each olympic games.
+
+Problem Statement: Similar to the previous query, identify during each Olympic Games, 
+which country won the highest gold, silver and bronze medals. Along with this, identify 
+also the country with the most medals in each olympic games.
+
+- PIVOT
+In Postgresql, we can use crosstab function to create pivot table.
+crosstab function is part of a PostgreSQL extension called tablefunc.
+To call the crosstab function, you must first enable the tablefunc extension by executing the following SQL command:
+
+CREATE EXTENSION TABLEFUNC;
+
+17. Identify which country won the most gold, most silver, most bronze medals and the most medals in each olympic games.
+
+    with temp as
+    	(SELECT substring(games, 1, position(' - ' in games) - 1) as games
+    		, substring(games, position(' - ' in games) + 3) as country
+    		, coalesce(gold, 0) as gold
+    		, coalesce(silver, 0) as silver
+    		, coalesce(bronze, 0) as bronze
+    	FROM CROSSTAB('SELECT concat(games, '' - '', nr.region) as games
+    					, medal
+    					, count(1) as total_medals
+    				  FROM olympics_history oh
+    				  JOIN olympics_history_noc_regions nr ON nr.noc = oh.noc
+    				  where medal <> ''NA''
+    				  GROUP BY games,nr.region,medal
+    				  order BY games,medal',
+                  'values (''Bronze''), (''Gold''), (''Silver'')')
+    			   AS FINAL_RESULT(games text, bronze bigint, gold bigint, silver bigint)),
+    	tot_medals as
+    		(SELECT games, nr.region as country, count(1) as total_medals
+    		FROM olympics_history oh
+    		JOIN olympics_history_noc_regions nr ON nr.noc = oh.noc
+    		where medal <> 'NA'
+    		GROUP BY games,nr.region order BY 1, 2)
+    select distinct t.games
+    	, concat(first_value(t.country) over(partition by t.games order by gold desc)
+    			, ' - '
+    			, first_value(t.gold) over(partition by t.games order by gold desc)) as Max_Gold
+    	, concat(first_value(t.country) over(partition by t.games order by silver desc)
+    			, ' - '
+    			, first_value(t.silver) over(partition by t.games order by silver desc)) as Max_Silver
+    	, concat(first_value(t.country) over(partition by t.games order by bronze desc)
+    			, ' - '
+    			, first_value(t.bronze) over(partition by t.games order by bronze desc)) as Max_Bronze
+    	, concat(first_value(tm.country) over (partition by tm.games order by total_medals desc nulls last)
+    			, ' - '
+    			, first_value(tm.total_medals) over(partition by tm.games order by total_medals desc nulls last)) as Max_Medals
+    from temp t
+    join tot_medals tm on tm.games = t.games and tm.country = t.country
+    order by games;
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------
+18. Which countries have never won gold medal but have won silver/bronze medals?
+
+Problem Statement: Write a SQL Query to fetch details of countries which have won silver or bronze medal but never won a gold medal.
+
+-- PIVOT
+In Postgresql, we can use crosstab function to create pivot table.
+crosstab function is part of a PostgreSQL extension called tablefunc.
+To call the crosstab function, you must first enable the tablefunc extension by executing the following SQL command:
+
+CREATE EXTENSION TABLEFUNC;
+
+18. Which countries have never won gold medal but have won silver/bronze medals?
+    select * from (
+    	SELECT country, coalesce(gold,0) as gold, coalesce(silver,0) as silver, coalesce(bronze,0) as bronze
+    		FROM CROSSTAB('SELECT nr.region as country
+    					, medal, count(1) as total_medals
+    					FROM OLYMPICS_HISTORY oh
+    					JOIN OLYMPICS_HISTORY_NOC_REGIONS nr ON nr.noc=oh.noc
+    					where medal <> ''NA''
+    					GROUP BY nr.region,medal order BY nr.region,medal',
+                    'values (''Bronze''), (''Gold''), (''Silver'')')
+    		AS FINAL_RESULT(country varchar,
+    		bronze bigint, gold bigint, silver bigint)) x
+    where gold = 0 and (silver > 0 or bronze > 0)
+    order by gold desc nulls last, silver desc nulls last, bronze desc nulls last;
+
+
+------------------------------------------------------------------------------------
+19. In which Sport/event, India has won highest medals.
+
+Problem Statement: Write SQL Query to return the sport which has won India the highest no of medals. 
+19. In which Sport/event, India has won highest medals.
+    with t1 as
+        	(select sport, count(1) as total_medals
+        	from olympics_history
+        	where medal <> 'NA'
+        	and team = 'India'
+        	group by sport
+        	order by total_medals desc),
+        t2 as
+        	(select *, rank() over(order by total_medals desc) as rnk
+        	from t1)
+    select sport, total_medals
+    from t2
+    where rnk = 1;
+--------------------------------------------------------------------------
+20. Break down all olympic games where India won medal for Hockey and how many medals in each olympic games
+
+Problem Statement: Write an SQL Query to fetch details of all Olympic Games where India won medal(s) in hockey. 
+20. Break down all olympic games where india won medal for Hockey and how many medals in each olympic games
+    select team, sport, games, count(1) as total_medals
+    from olympics_history
+    where medal <> 'NA'
+    and team = 'India' and sport = 'Hockey'
+    group by team, sport, games
+    order by total_medals desc;
+
+
+
+
+
+
+
+
+
+
+
