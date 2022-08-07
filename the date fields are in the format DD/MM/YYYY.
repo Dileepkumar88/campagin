@@ -1,0 +1,153 @@
+Step 1:
+Source Environment:		FinRec2
+Target Environment:		Production
+Cube/Mappings Names:	REP_Finance
+•	FINAL – LOAD CUBE – LRATRAN – R Application
+•	FINAL – LOAD CUBE – LRATRAN – S Application (Current)
+•	FINAL – LOAD CUBE – LRATRAN – S Application (Arrears)
+REP_Rates
+•	LOAD CUBE – RATES – LRATRAN
+
+Step 2:
+Notes:
+1.	The old transaction date mapping looks like this – YEAR(tra.trandate) * 10000 + MONTH(tra.trandate)* 100+ DAY(tra.trandate) As TransDate.
+
+2.	And the new transaction date mapping -     IIF(stat.usercode IN ('DISC','FINA','FINC'),YEAR(tra.docstrdate) * 10000 + MONTH(tra.docstrdate)* 100+ DAY(tra.docstrdate),YEAR(tra.trandate) * 10000 + MONTH(tra.trandate)* 100+ DAY(tra.trandate)) As TransDate
+
+Step 3:
+Instruction:
+Amend the old date mappings CAREFULLY to include a condition as highlighted in green in the following four (4) pages:
+ 
+1
+FINAL – LOAD CUBE – LRATRAN – R Application
+WITH CTE AS
+(
+SELECT  
+     YEAR(tra.postdate) * 10000 + MONTH(tra.postdate)* 100+ DAY(tra.postdate) as postdate
+    ,IIF(stat.usercode IN ('DISC','FINA','FINC'),YEAR(tra.docstrdate) * 10000 + MONTH(tra.docstrdate)* 100+ DAY(tra.docstrdate),YEAR(tra.trandate) * 10000 + MONTH(tra.trandate)* 100+ DAY(tra.trandate)) As TransDate
+    ,ass.assmnumber As Assment
+    ,ISNULL(CAST(typ.rbtycode As Char), 'NA') As RebateType 
+    ,rtype.rttycode As RateType
+    ,stat.usercode As TransType
+    ,Amount, paid,apportion
+    ,ntgp.ntgpcode As NoticeGroup
+,LTRIM(RTRIM(pr.perdcode)) AS Period
+	,rtype.applicatn As applicatn
+FROM pthdbo.LRATRAN tra WITH (NOLOCK)
+     JOIN pthdbo.lraassm ass WITH (NOLOCK) ON ass.tpklraassm = tra.tfklraassm
+     JOIN pthdbo.lrartty rtype WITH (NOLOCK) ON rtype.tpklrartty = tra.tfklrartty
+     JOIN pthdbo.lrattus stat  WITH (NOLOCK) ON stat.tpklrattus = tra.tfklrattus
+     LEFT OUTER JOIN pthdbo.lrarbty  typ WITH (NOLOCK) ON typ.tpklrarbty = tra.tfklrarbty
+     LEFT OUTER JOIN pthdbo.lrantgp  ntgp WITH (NOLOCK) ON ass.tfklrantgp = ntgp.tpklrantgp
+     JOIN LRAPERD pr WITH (NOLOCK) ON pr.tpklraperd=tra.tfklraperd
+--where ass.applicatn='R'
+WHERE LTRIM(RTRIM(stat.usercode)) NOT LIKE '%-D'
+AND rtype.applicatn = 'R'
+AND pr.tpklraperd >= 120
+--AND rtype.tfklracatg = 217
+)
+SELECT postdate, TransDate, RebateType, RateType, TransType, NoticeGroup, Period, applicatn, SUM(Amount) AS Amount, SUM(Paid) as Paid, SUM(apportion) AS apportion
+FROM CTE 
+GROUP BY postdate, TransDate, RebateType, RateType, TransType, NoticeGroup, Period, applicatn
+
+
+ 
+2
+FINAL – LOAD CUBE – LRATRAN – S Application (Current)
+WITH CTE AS
+(
+SELECT  
+     YEAR(tra.postdate) * 10000 + MONTH(tra.postdate)* 100+ DAY(tra.postdate) as postdate
+    ,IIF(stat.usercode IN ('DISC','FINA','FINC'),YEAR(tra.docstrdate) * 10000 + MONTH(tra.docstrdate)* 100+ DAY(tra.docstrdate),YEAR(tra.trandate) * 10000 + MONTH(tra.trandate)* 100+ DAY(tra.trandate)) As TransDate
+    ,ass.assmnumber As Assment
+	,tra.tfklraperd as Period
+	,tra.tfkperd_1 as PeriodFrom
+    ,ISNULL(CAST(typ.rbtycode As Char), 'NA') As RebateType 
+    ,rtype.rttycode As RateType
+    ,stat.usercode As TransType
+    ,Amount, paid,apportion
+    ,ntgp.ntgpcode As NoticeGroup
+	,LTRIM(RTRIM(pr.perdcode)) AS PeriodCode
+	,rtype.applicatn As applicatn
+FROM pthdbo.LRATRAN tra WITH (NOLOCK)
+     JOIN pthdbo.lraassm ass WITH (NOLOCK) ON ass.tpklraassm = tra.tfklraassm
+     JOIN pthdbo.lrartty rtype WITH (NOLOCK) ON rtype.tpklrartty = tra.tfklrartty
+     JOIN pthdbo.lrattus stat  WITH (NOLOCK) ON stat.tpklrattus = tra.tfklrattus
+     LEFT OUTER JOIN pthdbo.lrarbty  typ WITH (NOLOCK) ON typ.tpklrarbty = tra.tfklrarbty
+     LEFT OUTER JOIN pthdbo.lrantgp  ntgp WITH (NOLOCK) ON ass.tfklrantgp = ntgp.tpklrantgp
+     JOIN LRAPERD pr WITH (NOLOCK) ON pr.tpklraperd=tra.tfklraperd
+--where ass.applicatn='R'
+WHERE LTRIM(RTRIM(stat.usercode)) NOT LIKE '%-D'
+AND rtype.applicatn = 'S'
+AND pr.tpklraperd >= 120
+AND tra.tfklraperd = tra.tfkperd_1
+)
+SELECT postdate, TransDate, Assment, RebateType, RateType, TransType, NoticeGroup, applicatn, Period, PeriodFrom, PeriodCode, SUM(Amount) AS Amount, SUM(Paid) as Paid, SUM(apportion) AS apportion
+FROM CTE 
+GROUP BY postdate, TransDate, Assment, RebateType, RateType, TransType, NoticeGroup, Period, PeriodFrom, PeriodCode, applicatn
+Order By Assment, Period, PeriodFrom 
+3
+FINAL – LOAD CUBE – LRATRAN – S Application (Arrears)
+WITH CTE AS
+(
+SELECT  
+     YEAR(tra.postdate) * 10000 + MONTH(tra.postdate)* 100+ DAY(tra.postdate) as postdate
+    ,IIF(stat.usercode IN ('DISC','FINA','FINC'),YEAR(tra.docstrdate) * 10000 + MONTH(tra.docstrdate)* 100+ DAY(tra.docstrdate),YEAR(tra.trandate) * 10000 + MONTH(tra.trandate)* 100+ DAY(tra.trandate)) As TransDate   
+    ,ass.assmnumber As Assment
+	,tra.tfklraperd as Period
+	,tra.tfkperd_1 as PeriodFrom
+    ,ISNULL(CAST(typ.rbtycode As Char), 'NA') As RebateType 
+    ,rtype.rttycode As RateType
+    ,stat.usercode As TransType
+    ,Amount, paid,apportion
+    ,ntgp.ntgpcode As NoticeGroup
+	,LTRIM(RTRIM(pr.perdcode)) AS PeriodCode
+	,rtype.applicatn As applicatn
+FROM pthdbo.LRATRAN tra WITH (NOLOCK)
+     JOIN pthdbo.lraassm ass WITH (NOLOCK) ON ass.tpklraassm = tra.tfklraassm
+     JOIN pthdbo.lrartty rtype WITH (NOLOCK) ON rtype.tpklrartty = tra.tfklrartty
+     JOIN pthdbo.lrattus stat  WITH (NOLOCK) ON stat.tpklrattus = tra.tfklrattus
+     LEFT OUTER JOIN pthdbo.lrarbty  typ WITH (NOLOCK) ON typ.tpklrarbty = tra.tfklrarbty
+     LEFT OUTER JOIN pthdbo.lrantgp  ntgp WITH (NOLOCK) ON ass.tfklrantgp = ntgp.tpklrantgp
+     JOIN LRAPERD pr WITH (NOLOCK) ON pr.tpklraperd=tra.tfklraperd
+--where ass.applicatn='R'
+WHERE LTRIM(RTRIM(stat.usercode)) NOT LIKE '%-D'
+AND rtype.applicatn = 'S'
+AND pr.tpklraperd >= 120
+AND tra.tfklraperd <> tra.tfkperd_1
+)
+SELECT postdate, TransDate, Assment, RebateType, RateType, TransType, NoticeGroup, applicatn, Period, PeriodFrom, PeriodCode, SUM(Amount) AS Amount, SUM(Paid) as Paid, SUM(apportion) AS apportion
+FROM CTE 
+GROUP BY postdate, TransDate, Assment, RebateType, RateType, TransType, NoticeGroup, Period, PeriodFrom, PeriodCode, applicatn
+Order By Assment, Period, PeriodFrom 
+4
+LOAD CUBE – RATES – LRATRAN
+SELECT
+  	DISTINCT YEAR(tra.postdate) * 10000 + MONTH(tra.postdate)* 100+ DAY(tra.postdate) as postdate
+	, IIF(stat.usercode IN ('DISC','FINA','FINC'),YEAR(tra.docstrdate) * 10000 + MONTH(tra.docstrdate)* 100+ DAY(tra.docstrdate),YEAR(tra.trandate) * 10000 + MONTH(tra.trandate)* 100+ DAY(tra.trandate)) As TransDate
+	, ass.assmnumber As Assment
+	, ngp.ntgpcode
+	, ISNULL(CAST(typ.rbtycode As Char), 'NA') As RebateType
+	, ISNULL(CONVERT(CHAR(15),ran.transfdate ,112),'NA') as SaleDate
+	, rtype.rttycode As RateType
+	, stat.usercode As Status
+	, Amount
+	, paid
+	, LTRIM(RTRIM(pr.perdcode)) AS Period 
+FROM pthdbo.LRATRAN tra WITH (NOLOCK)
+JOIN pthdbo.lraassm ass WITH (NOLOCK) ON ass.tpklraassm = tra.tfklraassm
+JOIN pthdbo.lrartty rtype WITH (NOLOCK) ON rtype.tpklrartty = tra.tfklrartty
+JOIN pthdbo.lrattus stat on stat.tpklrattus = tra.tfklrattus
+LEFT OUTER JOIN pthdbo.lrarbty typ WITH (NOLOCK) ON  typ.tpklrarbty = tra.tfklrarbty
+LEFT OUTER JOIN pthdbo.lrantgp ngp WITH (NOLOCK) ON ass.tfklrantgp = ngp.tpklrantgp
+LEFT OUTER JOIN pthdbo.lparole rol WITH (NOLOCK) ON ass.tpklraassm = rol.tfkappl  and fklparolta = 'lra' and fklparoltn = 0
+LEFT OUTER JOIN pthdbo.lpaprop pro WITH (NOLOCK) ON pro.tpklpaprop = rol.tfklocl
+LEFT OUTER JOIN pthdbo.lpaprtr prt WITH (NOLOCK) ON pro.tpklpaprop = prt.tfklpaprop
+LEFT OUTER JOIN pthdbo.lpatran ran WITH (NOLOCK) ON prt.tfklpatran = ran.tpklpatran
+JOIN LRAPERD pr WITH (NOLOCK) ON pr.tpklraperd=tra.tfklraperd
+
+
+
+Step 4:
+The data load should update per job schedule.
+
